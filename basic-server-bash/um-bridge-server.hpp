@@ -2,49 +2,105 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 #include "../lib/umbridge.h"
 
-class BashCommandModel : public umbridge::Model {
+#define N 3
+
+class BashCommandModel : public umbridge::Model
+{
 public:
     BashCommandModel() : umbridge::Model("bash_command") {}
 
-    std::vector<std::size_t> GetInputSizes(const json& config_json) const override {
-        return {1}; // one-dimensional input vector
+    std::vector<std::size_t> GetInputSizes(const json &config_json) const override
+    {
+        return {N,N};
     }
 
-    std::vector<std::size_t> GetOutputSizes(const json& config_json) const override {
-        return {1}; // one-dimensional output vector
+    std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
+    {
+        return {N,N};
     }
 
-    std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>>& inputs, json config) override {
-        const std::string command = GetCommand(inputs[0][0]); // construct bash command with input argument
-        const std::string output = RunCommand(command); // execute command and get its output
-        const double result = std::stod(output); // convert output string to double
-        return {{result}}; // return output as vector
+    std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
+    {
+        const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
+        system(command.c_str());                                      // execute command and write its result to a file
+
+        std::vector<std::vector<double>> output;
+        getOutput(output, "output.txt"); // get output from output file
+
+        return output; // return output as vector
     }
 
-    bool SupportsEvaluate() override {
+    bool SupportsEvaluate() override
+    {
         return true;
     }
 
 private:
-    std::string GetCommand(double input) const {
-        const std::string command = "bash <command> " + std::to_string(input); // construct bash command with input argument
+    std::string getCommand(const std::vector<std::vector<double>> &input, std::string outputFile = "output.txt")
+    {
+        std::string command;
+        command += "bash add_one.sh ";
+        command += writeToFile(input);
+        command += " " + outputFile;
         return command;
     }
 
-    std::string RunCommand(const std::string& command) const {
-        std::string output;
-        FILE* pipe = popen(command.c_str(), "r"); // open pipe to execute command
-        if (!pipe) {
-            std::cerr << "Error executing bash command" << std::endl;
-            return output; // return empty string on error
+    void getOutput(std::vector<std::vector<double>> &output, const std::string filename = "output.txt")
+    {
+        readFromFile(output, filename);
+    }
+
+    std::string writeToFile(const std::vector<std::vector<double>> &data, const std::string &filename = "parameters.txt")
+    {
+        std::ofstream file(filename);
+
+        if (!file.is_open())
+        {
+            std::cerr << "Error opening file" << std::endl;
+            return "";
         }
-        char buffer[128];
-        while (fgets(buffer, 128, pipe) != nullptr) {
-            output += buffer; // append output of command to output string
+
+        for (const auto &row : data)
+        {
+            for (const auto &elem : row)
+            {
+                file << elem << " ";
+            }
+            file << std::endl;
         }
-        pclose(pipe); // close pipe
-        return output;
+
+        file.close();
+
+        return filename; // return the name of output file
+    }
+
+    // write the data to output vector
+    void readFromFile(std::vector<std::vector<double>> &output, const std::string &filename)
+    {
+        std::ifstream file(filename);
+
+        if (!file.is_open())
+        {
+            std::cerr << "Error opening file" << std::endl;
+            return;
+        }
+
+        std::string line;
+        while (std::getline(file, line))
+        {
+            std::vector<double> row;
+            std::stringstream ss(line);
+            double elem;
+            while (ss >> elem)
+            {
+                row.push_back(elem);
+            }
+            output.push_back(row);
+        }
+
+        file.close();
     }
 };
