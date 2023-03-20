@@ -49,7 +49,7 @@ private:
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
         std::string job_id;
-        std::ifstream infile(std::system(sbatch_command.c_str()));
+        std::ifstream infile(std::system(sbatch_command.c_str())); //can not get the id correctly yet
         if (infile >> job_id)
         {
             std::cout << "Job submitted with ID: " << job_id << std::endl;
