@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <cstdlib>
-#include <unistd.h>
+#include <cstdio>
 #include "../lib/umbridge.h"
 
 #define N 3
@@ -28,8 +27,8 @@ public:
     {
         const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
         const std::string job_id = submitJob(command);
-                                                   // execute command and write its result to a file
-        waitForJobCompletion(job_id); //call scontrol for every 1 sceond to check
+        // execute command and write its result to a file
+        waitForJobCompletion(job_id); // call scontrol for every 1 sceond to check
 
         std::vector<std::vector<double>> output;
         getOutput(output, "output.txt"); // get output from output file
@@ -48,18 +47,22 @@ private:
         std::cout << "Submitting job with command: " << command << std::endl;
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
+        FILE *pipe = popen(sbatch_command.c_str(), "r"); //execute the command and return the output as stream
+        if (!pipe)
+        {
+            std::cerr << "Failed to submit job." << std::endl;
+            return "";
+        }
+
+        char buffer[128];
         std::string job_id;
-        std::ifstream infile(std::system(sbatch_command.c_str())); //can not get the id correctly yet
-        if (infile >> job_id)
+        while (fgets(buffer, 128, pipe))
         {
-            std::cout << "Job submitted with ID: " << job_id << std::endl;
-            return job_id;
+            job_id += buffer;
         }
-        else
-        {
-            std::cerr << "Failed to submit job" << std::endl;
-            exit(1);
-        }
+        pclose(pipe);
+
+        return job_id;
     }
 
     void waitForJobCompletion(const std::string &job_id)
