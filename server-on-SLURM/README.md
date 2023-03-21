@@ -26,4 +26,22 @@
     conda activate umbridge
    ```
 
-3. Run client.py on login node: `python3 client.py <hostname>`
+3. Run client.py on login node: `python3 client.py <server hostname>`
+
+> Read hostname from hostname.txt output by the server SLURM job.
+
+## How to run client on laptop
+
+1. Create SSH tunneling:
+
+    ```
+    ssh <username>@helix.bwservices.uni-heidelberg.de -N -f -L <local port>:<server hostname>:<server port>
+    # start ssh tunnel
+    # -N : do not execute remote command
+    # -f : request ssh to go to the background once the ssh connection has been established
+    ```
+
+2. Set port on laptop: `export PORT=<local port>`
+
+3. Run client at localhost: `python3 client.py localhost`
+
