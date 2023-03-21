@@ -8,10 +8,10 @@
 
 #define N 3
 
-class BashCommandModel : public umbridge::Model
+class SlurmModel : public umbridge::Model
 {
 public:
-    BashCommandModel() : umbridge::Model("slurm_command") {}
+    SlurmModel() : umbridge::Model("slurm_command") {}
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {

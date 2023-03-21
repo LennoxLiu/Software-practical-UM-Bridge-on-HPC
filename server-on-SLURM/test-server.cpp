@@ -25,7 +25,7 @@ int main (void ){
     }
 
     // Set up and serve model
-    BashCommandModel bModel;
+    SlurmModel bModel;
     
     umbridge::serveModels({&bModel}, "localhost", port);
 }
