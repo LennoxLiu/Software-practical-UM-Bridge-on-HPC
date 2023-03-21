@@ -17,7 +17,7 @@
 
 > The script of SLURM job will create  a file named "hostname.txt", and write the hostname of the computing node( main server) into it.
 >
-> The main server will submit a new basic SLURM job whenever it receives a evaluation request.
+> The main server will submit a new basic SLURM job whenever it receives an evaluation request.
 
 ## How to run client on Helix
 
