@@ -13,11 +13,13 @@ run-client: client.py
 clear-server:
 	- rm ./server.o
 
-helix-make:
+helix-make: helix-build
+	- make run-server
+
+helix-build:
 	- git reset --hard
 	- git pull
 	- make build-server
-	- make run-server
 
 helix-update:
 	- git reset --hard

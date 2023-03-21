@@ -96,6 +96,7 @@ private:
             {
                 job_status = job_status.substr(9); // remove "JobState="
             }
+            std::cout<<"Job status: "<<job_status<<std::endl;
             sleep(1);
         } while (job_status != "COMPLETED");
     }
