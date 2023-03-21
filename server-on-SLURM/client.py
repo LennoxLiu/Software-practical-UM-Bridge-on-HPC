@@ -18,11 +18,12 @@ if len(sys.argv) > 1:
     host = sys.argv[1]
 else:
     host="localhost"
-print("Connecting to server at: ", host)
+url = "http://"+host+":"+str(port)
+print("Connecting to server at:", url)
 
 
-print(umbridge.supported_models("http://"+host+":"+str(port)))
-model = umbridge.HTTPModel("http://"+host+":"+str(port), "slurm_command")
+print(umbridge.supported_models(url))
+model = umbridge.HTTPModel(url, "slurm_command")
 
 print(model.get_input_sizes())
 print(model.get_output_sizes())
