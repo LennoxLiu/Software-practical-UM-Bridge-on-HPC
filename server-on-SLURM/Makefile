@@ -24,6 +24,6 @@ helix-update:
 	- git pull
 
 load-conda:
-	- module load devel/miniconda/3
-	- source ${MINICONDA_HOME}/etc/profile.d/conda.sh
-	- conda activate umbridge
+	- bash -c "module load devel/miniconda/3"
+	- bash -c "source $MINICONDA_HOME/etc/profile.d/conda.sh"
+	- bash -c "conda activate umbridge"
