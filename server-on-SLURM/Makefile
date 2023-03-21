@@ -14,6 +14,7 @@ clear-server:
 	- rm ./server.o
 
 helix-make:
+	- git reset --hard
 	- git pull
 	- make build-server
 	- make run-server
