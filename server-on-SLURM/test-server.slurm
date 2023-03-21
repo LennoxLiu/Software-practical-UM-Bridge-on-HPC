@@ -6,4 +6,5 @@
 
 make clear-server
 make build-server
-make run-server
+host=$(srun hostname)
+./server.o $host

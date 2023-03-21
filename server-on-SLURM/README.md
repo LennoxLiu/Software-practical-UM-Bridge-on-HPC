@@ -26,4 +26,4 @@
     conda activate umbridge
    ```
 
-3. Run client.py on login node: `python3 client.py`
+3. Run client.py on login node: `python3 client.py <hostname>`
