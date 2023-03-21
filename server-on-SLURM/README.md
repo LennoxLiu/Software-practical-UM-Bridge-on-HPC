@@ -9,7 +9,10 @@
     > Sometimes the default port 4242 of the login node is occupied.
 
 3. Compile and run the server
-    - Run on login node: `make helix-make`
+    - Build and run on login node: `make helix-make`
+    
+    > Pull from the repo and build the server: `make helix-build`
+    
     - Run on computing node: `sbatch test-server.slurm`
 
 ## How to run client on Helix
