@@ -22,8 +22,3 @@ helix-make:
 helix-update:
 	- git reset --hard
 	- git pull
-
-load-conda:
-	- bash -c "module load devel/miniconda/3"
-	- bash -c "source ${MINICONDA_HOME}/etc/profile.d/conda.sh"
-	- bash -c "conda activate umbridge"
