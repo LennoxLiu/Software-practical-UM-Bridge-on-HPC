@@ -1,6 +1,7 @@
 import umbridge
 import numpy as np
 
+print("Client start.")
 print(umbridge.supported_models("http://localhost:4242"))
 
 model = umbridge.HTTPModel("http://localhost:4242", "slurm_command")
