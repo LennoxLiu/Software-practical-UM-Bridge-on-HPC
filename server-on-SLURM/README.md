@@ -4,7 +4,7 @@
 
 1. Load module to compile `cpp` files: `module load compiler/gnu`
 
-2. (Optional) Set the port of server: `export PORT=4243`
+2. (**Optional**) Set the port of server: `export PORT=4243`
 
     > Sometimes the default port 4242 of the login node is occupied.
 
@@ -14,6 +14,10 @@
     > Pull from the repo and build the server: `make helix-build`
     
     - Run on computing node: `sbatch test-server.slurm`
+
+> The script of SLURM job will create  a file named "hostname.txt", and write the hostname of the computing node( main server) into it.
+>
+> The main server will submit a new basic SLURM job whenever it receives a evaluation request.
 
 ## How to run client on Helix
 
@@ -32,7 +36,7 @@
 
 ## How to run client on laptop
 
-1. Create SSH tunneling:
+1. Create a SSH tunnel:
 
     ```
     ssh <username>@helix.bwservices.uni-heidelberg.de -N -f -L <local port>:<server hostname>:<server port>
