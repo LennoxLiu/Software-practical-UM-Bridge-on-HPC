@@ -70,7 +70,8 @@ private:
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
         std::string job_id = getCommandOutput(sbatch_command);
-        job_id.pop_back(); //delete the line break
+        if (!job_id.empty())
+            job_id.pop_back(); //delete the line break
     }
 
     void waitForJobCompletion(const std::string &job_id)
