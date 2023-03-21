@@ -1,10 +1,15 @@
 import umbridge
-import numpy as np
+import os
+
 
 print("Client start.")
-print(umbridge.supported_models("http://localhost:4242"))
+port = os.getenv("PORT")
+print("Clinet using port:",port)
 
-model = umbridge.HTTPModel("http://localhost:4242", "slurm_command")
+
+print(umbridge.supported_models("http://localhost:"+str(port)))
+
+model = umbridge.HTTPModel("http://localhost:"+str(port), "slurm_command")
 
 print(model.get_input_sizes())
 print(model.get_output_sizes())
