@@ -18,3 +18,7 @@ helix-make:
 	- git pull
 	- make build-server
 	- make run-server
+
+helix-update:
+	- git reset --hard
+	- git pull
