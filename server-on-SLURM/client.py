@@ -3,7 +3,10 @@ import os
 
 
 print("Client start.")
-port = os.getenv("PORT")
+try:
+    port = os.getenv("PORT")
+except:
+    port = 4242
 print("Clinet using port:",port)
 
 
