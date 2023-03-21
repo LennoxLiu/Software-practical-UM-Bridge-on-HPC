@@ -25,6 +25,7 @@ public:
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
+        std::cout<<"Request received in server."<<std::endl;
         const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
         const std::string job_id = submitJob(command);
         // execute command and write its result to a file
