@@ -80,7 +80,7 @@ private:
     void waitForJobCompletion(const std::string &job_id)
     {
         std::string command;
-        command = "scontrol show job " + job_id + " | grep JobState";
+        command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
         std::cout<<"Checking runtime: "<<command<<std::endl;
         std::string job_status;
 
@@ -91,10 +91,6 @@ private:
             {
                 std::cerr << "Wait for job completion failure." << std::endl;
                 return;
-            }
-            else
-            {
-                job_status = job_status.substr(9); // remove "JobState="
             }
             std::cout<<"Job status: "<<job_status<<std::endl;
             sleep(1);
