@@ -42,27 +42,32 @@ public:
     }
 
 private:
+    std::string getCommandOutput(const std::string command)
+    {
+        FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
+        if (!pipe)
+        {
+            std::cerr << "Failed to execute the command." << std::endl;
+            return "";
+        }
+
+        char buffer[128];
+        std::string output;
+        while (fgets(buffer, 128, pipe))
+        {
+            output += buffer;
+        }
+        pclose(pipe);
+
+        return output;
+    }
+
     std::string submitJob(const std::string &command)
     {
         std::cout << "Submitting job with command: " << command << std::endl;
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
-        FILE *pipe = popen(sbatch_command.c_str(), "r"); //execute the command and return the output as stream
-        if (!pipe)
-        {
-            std::cerr << "Failed to submit job." << std::endl;
-            return "";
-        }
-
-        char buffer[128];
-        std::string job_id;
-        while (fgets(buffer, 128, pipe))
-        {
-            job_id += buffer;
-        }
-        pclose(pipe);
-
-        return job_id;
+        return getCommandOutput(sbatch_command);
     }
 
     void waitForJobCompletion(const std::string &job_id)
@@ -70,11 +75,16 @@ private:
         std::string command;
         command = "scontrol show job " + job_id + " | grep JobState";
         std::string job_status;
+
         do
         {
-            job_status.clear();
-            std::ifstream infile(std::system(command.c_str()));
-            if (infile >> job_status)
+            job_status = getCommandOutput(command);
+            if (job_status == "")
+            {
+                std::cerr << "Wait for job completion failure." << std::endl;
+                return;
+            }
+            else
             {
                 job_status = job_status.substr(9); // remove "JobState="
             }
