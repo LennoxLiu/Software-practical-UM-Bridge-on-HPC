@@ -68,7 +68,7 @@ private:
     {
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
-        std::cout << "Submitting job with command: " << command << std::endl;
+        std::cout << "Submitting job with command: " << sbatch_command << std::endl;
         
         std::string job_id = getCommandOutput(sbatch_command);
         if (!job_id.empty())
