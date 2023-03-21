@@ -89,13 +89,13 @@ private:
             job_status = getCommandOutput(command);
             if (!job_status.empty())
                 job_status.pop_back(); //delete the line break
-                
+
             if (job_status == "")
             {
                 std::cerr << "Wait for job completion failure." << std::endl;
                 return;
             }
-            std::cout<<"Job status: "<<job_status<<std::endl;
+            // std::cout<<"Job status: "<<job_status<<std::endl;
             sleep(1);
         } while (job_status != "COMPLETED");
     }
