@@ -11,7 +11,7 @@
 class BashCommandModel : public umbridge::Model
 {
 public:
-    BashCommandModel() : umbridge::Model("bash_command") {}
+    BashCommandModel() : umbridge::Model("slurm_command") {}
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {

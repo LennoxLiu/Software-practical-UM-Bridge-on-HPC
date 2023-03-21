@@ -3,7 +3,7 @@ import numpy as np
 
 print(umbridge.supported_models("http://localhost:4242"))
 
-model = umbridge.HTTPModel("http://localhost:4242", "bash_command")
+model = umbridge.HTTPModel("http://localhost:4242", "slurm_command")
 
 print(model.get_input_sizes())
 print(model.get_output_sizes())

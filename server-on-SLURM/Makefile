@@ -1,6 +1,6 @@
 all: build-server run-server
 
-objects2 = test-server.cpp um-bridge-server.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
+objects2 = test-server.cpp slurm-server.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
 build-server:
 	- g++ -O3 -w -std=c++11 $(objects2) -o server.o -lssl -lcrypto -pthread
 
