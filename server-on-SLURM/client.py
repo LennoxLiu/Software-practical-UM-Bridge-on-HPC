@@ -8,7 +8,7 @@ try:
 except:
     port = 4242
 
-if(port == "None"):
+if(port == "None\Info"):
     port = 4242
 
 print("Clinet using port:",port)
