@@ -1,4 +1,4 @@
-all: build-server run-server
+all: clear-server build-server run-server
 
 objects2 = test-server.cpp slurm-server.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
 build-server:

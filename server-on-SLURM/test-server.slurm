@@ -5,5 +5,6 @@
 #SBATCH --mem=500mb
 #SBATCH --export=None
 
+make clear-server
 make build-server
 make run-server
