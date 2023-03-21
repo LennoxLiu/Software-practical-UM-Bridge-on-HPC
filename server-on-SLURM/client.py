@@ -7,6 +7,10 @@ try:
     port = os.getenv("PORT")
 except:
     port = 4242
+
+if(port == "None"):
+    port = 4242
+
 print("Clinet using port:",port)
 
 
