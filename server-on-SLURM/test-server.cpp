@@ -9,8 +9,9 @@
 
 #include "../lib/umbridge.h"
 
-int main (void ){
-    
+int main(int argc, char *argv[])
+{
+
     // Read environment variables for configuration
     char const *port_cstr = std::getenv("PORT");
     int port = 0;
@@ -26,6 +27,12 @@ int main (void ){
 
     // Set up and serve model
     SlurmModel bModel;
-    
-    umbridge::serveModels({&bModel}, "localhost", port);
+
+    std::string hostname = "localhost";
+    if (argc == 2)
+    {
+        hostname=argv[1];
+    }
+    std::cout<<"Hosting server at: http://"<<hostname<<":"<<port<<std::endl;
+    umbridge::serveModels({&bModel}, hostname, port);
 }
