@@ -75,6 +75,7 @@ private:
     {
         std::string command;
         command = "scontrol show job " + job_id + " | grep JobState";
+        std::cout<<"Checking runtime: "<<command<<std::endl;
         std::string job_status;
 
         do
