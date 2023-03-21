@@ -15,5 +15,5 @@ clear-server:
 
 helix-make:
 	- git pull
-	- build-server
-	- run-server
+	- make build-server
+	- make run-server
