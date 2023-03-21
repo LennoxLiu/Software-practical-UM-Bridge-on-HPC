@@ -12,3 +12,8 @@ run-client: client.py
 
 clear-server:
 	- rm ./server.o
+
+helix-make:
+	- git pull
+	- build-server
+	- run-server
