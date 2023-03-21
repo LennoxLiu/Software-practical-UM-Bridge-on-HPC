@@ -66,9 +66,10 @@ private:
     //return job id
     std::string submitJob(const std::string &command)
     {
-        std::cout << "Submitting job with command: " << command << std::endl;
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
+        std::cout << "Submitting job with command: " << command << std::endl;
+        
         std::string job_id = getCommandOutput(sbatch_command);
         if (!job_id.empty())
             job_id.pop_back(); //delete the line break
