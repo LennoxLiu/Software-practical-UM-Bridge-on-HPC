@@ -26,13 +26,13 @@ public:
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
         std::cout<<"Request received in Load Balancer."<<std::endl;
-        const std::string command = "sbatch "
-        // const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
         
         // start a regular server for single request
         // the regular servers should host at the hostname instead of 0.0.0.0 or localhost
-        const std::string job_id = submitJob(command); 
+        const std::string job_id = submitJob("sbatch empty_job.slurm"); 
         waitForJobState(job_id,"RUNNING"); // wait to start all regular servers
+
+        //start regular server in the node and return the hostname and port
 
 
 
