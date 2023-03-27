@@ -6,21 +6,35 @@
 #include <cstdio>
 #include "../lib/umbridge.h"
 
-#define N 3
+#define REGULAR_SERVER "./server.o" // only support C++ server for now
 
-class SlurmModel : public umbridge::Model
+class LoadBalancer : public umbridge::Model
 {
 public:
-    SlurmModel() : umbridge::Model("slurm_command") {}
+    LoadBalancer() : umbridge::Model("slurm_LB") {
+        std::cout<<"Starting dummy server in LoadBalancer."<<std::endl;
+        // start a dummy server that won't call Evaluate function, will only call GetInputSizes and GetOutputSizes
+        std::string cmd_output=getCommandOutput(REGULAR_SERVER);
+        std::string url=checkAndGetURL(cmd_output);
+        if (url == ""){
+            std::cerr<< "Fail to start a dummy server in LoadBalancer" << std::endl;
+            exit(-1);
+        }else{
+            dummy_server_url = url;
+        }
+    }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
-        return {N, N};
+        // return {N, N};
+        // get size from the dummy server, can only make sense after starting a server
+        
+
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        return {N, N};
+        // return {N, N};
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
@@ -50,6 +64,27 @@ public:
     }
 
 private:
+    std::string dummy_server_url;
+    // check whether the server starts successfully and return the url of server
+    std::string checkAndGetURL(const std::string& input){
+        std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
+        std::smatch match;
+        std::smatch match_url;
+        std::regex url_regex("(http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
+        std::stringstream ss;
+        if (std::regex_search(input, match, server_regex)) // check if the server starts
+        {
+            ss << match[0];
+            std::string input2 = ss.str();
+            if (std::regex_search(input2, match_url, url_regex))
+            {
+                // std::cout << "Found URL: " << match_url[0] << std::endl;
+                return match_url[0];
+            }
+        }
+        return "";
+    }
+    // run and get the result of command
     std::string getCommandOutput(const std::string command)
     {
         FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream

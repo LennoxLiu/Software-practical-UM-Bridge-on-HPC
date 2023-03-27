@@ -23,7 +23,7 @@ print("Connecting to server at:", url)
 
 
 print(umbridge.supported_models(url))
-model = umbridge.HTTPModel(url, "slurm_command")
+model = umbridge.HTTPModel(url, "slurm_LB")
 
 print(model.get_input_sizes())
 print(model.get_output_sizes())

@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     }
 
     // Set up and serve model
-    SlurmModel bModel;
+    LoadBalancer LB;
 
     std::string hostname = "localhost";
     if (argc == 2)
@@ -34,5 +34,5 @@ int main(int argc, char *argv[])
         hostname=argv[1];
     }
     std::cout<<"Hosting server at: http://"<<hostname<<":"<<port<<std::endl;
-    umbridge::serveModels({&bModel}, hostname, port);
+    umbridge::serveModels({&LB}, hostname, port);
 }
