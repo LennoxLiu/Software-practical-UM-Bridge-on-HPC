@@ -25,11 +25,18 @@ public:
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
-        std::cout<<"Request received in server."<<std::endl;
-        const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
-        const std::string job_id = submitJob(command);
-        // execute command and write its result to a file
-        waitForJobCompletion(job_id); // call scontrol for every 1 sceond to check
+        std::cout<<"Request received in Load Balancer."<<std::endl;
+        const std::string command = "sbatch "
+        // const std::string command = getCommand(inputs, "output.txt"); // construct bash command with input argument
+        
+        // start a regular server for single request
+        // the regular servers should host at the hostname instead of 0.0.0.0 or localhost
+        const std::string job_id = submitJob(command); 
+        waitForJobState(job_id,"RUNNING"); // wait to start all regular servers
+
+
+
+        waitForJobState(job_id,"COMPLETED"); // call scontrol for every 1 sceond to check
 
         std::vector<std::vector<double>> output;
         getOutput(output, "output.txt"); // get output from output file
@@ -77,7 +84,8 @@ private:
         return job_id;
     }
 
-    void waitForJobCompletion(const std::string &job_id)
+    // state = ["PENDING","RUNNING","COMPLETED"]
+    void waitForJobState(const std::string &job_id, const std::string & state = "COMPLETED")
     {
         std::string command;
         command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
@@ -96,8 +104,8 @@ private:
                 return;
             }
             // std::cout<<"Job status: "<<job_status<<std::endl;
-            sleep(1);
-        } while (job_status != "COMPLETED");
+            sleep(5);
+        } while (job_status != state);
     }
 
     std::string getCommand(const std::vector<std::vector<double>> &input, std::string outputFile = "output.txt")

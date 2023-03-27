@@ -1,8 +1,9 @@
 all: clear-server build-server run-server
 
-objects2 = test-server.cpp slurm-server.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
+regular-server-obj =  ./exahype-tsunami/server.cpp
+slurm-server-obj = test-server.cpp slurm-server.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
 build-server:
-	- g++ -O3 -Wall -std=c++11 $(objects2) -o server.o -lssl -lcrypto -pthread
+	- g++ -O3 -Wall -std=c++11 $(slurm-server-obj) $(regular-server-obj) -o server.o -lssl -lcrypto -pthread
 
 run-server: server.o
 	- ./server.o
