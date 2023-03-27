@@ -11,18 +11,7 @@
 class LoadBalancer : public umbridge::Model
 {
 public:
-    LoadBalancer() : umbridge::Model("slurm_LB") {
-        std::cout<<"Starting dummy server in LoadBalancer."<<std::endl;
-        // start a dummy server that won't call Evaluate function, will only call GetInputSizes and GetOutputSizes
-        std::string cmd_output=getCommandOutput(REGULAR_SERVER);
-        std::string url=checkAndGetURL(cmd_output);
-        if (url == ""){
-            std::cerr<< "Fail to start a dummy server in LoadBalancer" << std::endl;
-            exit(-1);
-        }else{
-            dummy_server_url = url;
-        }
-    }
+    LoadBalancer() : umbridge::Model("slurm_LB") {}
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
@@ -63,7 +52,6 @@ public:
     }
 
 private:
-    std::string dummy_server_url;
     // check whether the server starts successfully and return the url of server
     std::string checkAndGetURL(const std::string& input){
         std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
