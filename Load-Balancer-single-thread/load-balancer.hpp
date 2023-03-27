@@ -26,7 +26,6 @@ public:
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
-        // return {N, N};
         // get size from the dummy server, can only make sense after starting a server
         
 
@@ -34,7 +33,7 @@ public:
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        // return {N, N};
+        
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
