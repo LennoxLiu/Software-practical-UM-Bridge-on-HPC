@@ -32,5 +32,5 @@ echo $hostname
 export PORT=$port
 
 # run the server, server should listen to hostname instead of localhost or 0.0.0.0
-echo " "$($server_file)" | grep -o 'Hosting server at: [^ ]*' | sed 's/Hosting server at: //'" > url.txt
+echo " "$($server_file)" | grep -o 'Listening on port [^ ]*' | sed 's/Listening on port //'" > url.txt
 
