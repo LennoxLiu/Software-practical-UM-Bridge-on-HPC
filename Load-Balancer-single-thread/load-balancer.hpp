@@ -54,8 +54,7 @@ public:
         }
         */
 
-        std::cout
-            << "Hosting server at :" << server_url << std::endl;
+        std::cout << "Hosting server at : " << server_url << std::endl;
         // Start a client
         umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 
@@ -140,16 +139,16 @@ private:
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
         std::cout << "Submitting job with command: " << command << std::endl;
-        
+
         std::string job_id;
-        int i=0;
+        int i = 0;
         do
         {
             job_id = getCommandOutput(sbatch_command);
             if (!job_id.empty())
-                job_id.pop_back();       
-                
-            ++i;                                               // delete the line break
+                job_id.pop_back();
+
+            ++i;                                                         // delete the line break
         } while (i < 3 && !waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
         // try 3 times
 
