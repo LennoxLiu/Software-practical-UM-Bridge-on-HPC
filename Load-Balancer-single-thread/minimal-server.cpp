@@ -102,6 +102,9 @@ int main(int argc, char *argv[])
     else
     {
         hostname = getCommandOutput("hostname"); // get the hostname of node
+        // delete the line break
+        if (!hostname.empty())
+            hostname.pop_back();
     }
     std::cout << "Hosting server at : "
               << "http://" << hostname << ":" << port << std::endl;
