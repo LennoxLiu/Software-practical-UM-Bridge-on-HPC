@@ -55,6 +55,8 @@ public:
         */
 
         std::cout << "Hosting server at : " << server_url << std::endl;
+
+        std::cout << "Support model: "<< umbridge::SupportedModels(server_url)[0]<< std::endl;
         // Start a client
         umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 
