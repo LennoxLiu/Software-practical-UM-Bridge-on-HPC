@@ -30,7 +30,6 @@ public:
 
         // start a SLURM job for single request
         const std::string job_id = submitJob("sbatch regular-server.slurm");
-        waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
 
         const std::string server_url = readUrl(); // read server url from txt file
 
@@ -141,16 +140,24 @@ private:
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
         std::cout << "Submitting job with command: " << command << std::endl;
-
-        std::string job_id = getCommandOutput(sbatch_command);
-        if (!job_id.empty())
-            job_id.pop_back(); // delete the line break
+        
+        std::string job_id;
+        int i=0;
+        do
+        {
+            job_id = getCommandOutput(sbatch_command);
+            if (!job_id.empty())
+                job_id.pop_back();       
+                
+            ++i;                                               // delete the line break
+        } while (i < 3 && !waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+        // try 3 times
 
         return job_id;
     }
 
     // state = ["PENDING","RUNNING","COMPLETED"]
-    void waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
+    bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
     {
         std::string command;
         command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
@@ -163,14 +170,16 @@ private:
             if (!job_status.empty())
                 job_status.pop_back(); // delete the line break
 
-            if (job_status == "" || job_status == "COMPLETED" || job_status == "CANCELLED")
+            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "CANCELLED")
             {
                 std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
-                return;
+                return false;
             }
             // std::cout<<"Job status: "<<job_status<<std::endl;
             sleep(5);
         } while (job_status != state);
+
+        return true;
     }
 
     std::string getCommand(const std::vector<std::vector<double>> &input, std::string outputFile = "output.txt")
