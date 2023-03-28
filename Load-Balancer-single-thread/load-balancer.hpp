@@ -163,9 +163,9 @@ private:
             if (!job_status.empty())
                 job_status.pop_back(); // delete the line break
 
-            if (job_status == "")
+            if (job_status == "" || job_status == "COMPLETED" || job_status == "CANCELLED")
             {
-                std::cerr << "Wait for job completion failure." << std::endl;
+                std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
                 return;
             }
             // std::cout<<"Job status: "<<job_status<<std::endl;
