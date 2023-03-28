@@ -27,6 +27,7 @@ helix-make: helix-build
 	- make run-server
 
 helix-build:
+	- scancel -u hd_lo305
 	- git reset --hard
 	- git pull
 	- make build-server
