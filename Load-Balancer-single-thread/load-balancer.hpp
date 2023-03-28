@@ -29,6 +29,9 @@ public:
         std::cout << "Request received in Load Balancer." << std::endl;
 
         // start a SLURM job for single request
+        const std::string job_id = submitJob("sbatch regular-server.slurm");
+        /*
+        // start a SLURM job for single request
         const std::string job_id = submitJob("sbatch empty_job.slurm");
         waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
 
@@ -46,6 +49,7 @@ public:
             std::cerr << "Start regular server failed." << std::endl;
             exit(-1);
         }
+        */
 
         std::cout << "Hosting server at :" << server_url << std::endl;
         // Start a client

@@ -18,27 +18,18 @@ function get_avaliable_port {
 }
 
 # Check that the correct number of arguments have been passed
-if [ $# -ne 3 ]
+if [ $# -ne 1 ]
 then
-    echo "Usage: $0 job_id node_name server_file"
+    echo "Usage: $0 server_file"
     echo $@
     exit 1
 fi
 
-job_id=$1
-node_name=$2
-server_file=$3
+server_file=$1
 port=$(get_avaliable_port)
 
-echo "srun --jobid=$job_id  --nodelist=$node_name --pty /bin/bash && hostname"
-hostname= $(srun --jobid=$job_id  --nodelist=$node_name --pty /bin/bash && hostname)
+hostname= $(hostname)
 echo $hostname
-
-if [ "$node_name" != "$hostname" ]; then
-    echo "Login to computing node $node_name failed."
-    exit 1
-fi
-# Successfully login to node
 
 export PORT=$port
 
