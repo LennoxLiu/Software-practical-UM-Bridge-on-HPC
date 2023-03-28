@@ -32,7 +32,9 @@ public:
         const std::string job_id = submitJob("sbatch empty_job.slurm");
         waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
 
-        const std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o ' NodeList=[^ ]*' | sed 's/ NodeList=//'");
+        std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o ' NodeList=[^ ]*' | sed 's/ NodeList=//'");
+         if (!node_name.empty())
+            node_name.pop_back(); // delete the line break
 
         std::cout << "node_name = " << node_name << std::endl;
         std::cout << "Start server: "
