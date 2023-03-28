@@ -17,7 +17,6 @@ public:
     {
         // get size from the dummy server, can only make sense after starting a server
         return {2};
-
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
@@ -27,38 +26,33 @@ public:
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
-        std::cout<<"Request received in Load Balancer."<<std::endl;
-        
-        
-        // start a SLURM job for single request
-        const std::string job_id = submitJob("sbatch empty_job.slurm"); 
-        waitForJobState(job_id,"RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+        std::cout << "Request received in Load Balancer." << std::endl;
 
-        const std::string node_name = getCommandOutput("scontrol show job "+ job_id + " | grep -o 'NodeList=[^ ]*' | sed 's/NodeList=//'");
-        
-        // login to the computing node
-        std::string output = getCommandOutput( "srun --jobid="+job_id+" --nodelist="+node_name+" --pty /bin/bash && hostname"); // login to the computing node
-        if(output == node_name){
-            std::cout<< "Login success." << std::endl;
-        }else{
-            std::cerr<< "Login to computing node "+ node_name +" failed."<<std::endl;
+        // start a SLURM job for single request
+        const std::string job_id = submitJob("sbatch empty_job.slurm");
+        waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+
+        const std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o 'NodeList=[^ ]*' | sed 's/NodeList=//'");
+
+        // start regular server in the node and return the hostname and port
+        //  the regular servers should host at the hostname instead of 0.0.0.0 or localhost
+        const std::string server_url = getCommandOutput("./start_regular_server.sh " + job_id + " " + node_name + " ./server.o");
+        if (server_url.substr(0, 4) != "http")
+        {
+            std::cerr << "Start regular server failed." << std::endl;
             exit(-1);
         }
-        
-        // run a regular server at the hostname with appropriate port
-        command += "&& ./server.o "
 
-        //start regular server in the node and return the hostname and port
-        // the regular servers should host at the hostname instead of 0.0.0.0 or localhost
+        // Start a client
+        umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 
+        // Pass the arguments and get the output
+        std::vector<std::vector<double>> outputs = client.Evaluate(inputs, config);
 
+        // Cancel the SLURM job
+        getCommandOutput("scancel " + job_id);
 
-        waitForJobState(job_id,"COMPLETED"); // call scontrol for every 1 sceond to check
-
-        std::vector<std::vector<double>> output;
-        getOutput(output, "output.txt"); // get output from output file
-
-        return output; // return output as vector
+        return outputs; // return output as vector
     }
 
     bool SupportsEvaluate() override
@@ -67,9 +61,9 @@ public:
     }
 
 private:
-
     // check whether the server starts successfully and return the url of server
-    std::string checkAndGetURL(const std::string& input){
+    std::string checkAndGetURL(const std::string &input)
+    {
         std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
         std::smatch match;
         std::smatch match_url;
@@ -94,7 +88,7 @@ private:
         FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
         if (!pipe)
         {
-            std::cerr << "Failed to execute the command." << std::endl;
+            std::cerr << "Failed to execute the command: " + command << std::endl;
             return "";
         }
 
@@ -109,33 +103,33 @@ private:
         return output;
     }
 
-    //return job id
+    // return job id
     std::string submitJob(const std::string &command)
     {
         std::string sbatch_command;
         sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
         std::cout << "Submitting job with command: " << command << std::endl;
-        
+
         std::string job_id = getCommandOutput(sbatch_command);
         if (!job_id.empty())
-            job_id.pop_back(); //delete the line break
+            job_id.pop_back(); // delete the line break
 
         return job_id;
     }
 
     // state = ["PENDING","RUNNING","COMPLETED"]
-    void waitForJobState(const std::string &job_id, const std::string & state = "COMPLETED")
+    void waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
     {
         std::string command;
         command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-        std::cout<<"Checking runtime: "<<command<<std::endl;
+        std::cout << "Checking runtime: " << command << std::endl;
         std::string job_status;
 
         do
         {
             job_status = getCommandOutput(command);
             if (!job_status.empty())
-                job_status.pop_back(); //delete the line break
+                job_status.pop_back(); // delete the line break
 
             if (job_status == "")
             {
