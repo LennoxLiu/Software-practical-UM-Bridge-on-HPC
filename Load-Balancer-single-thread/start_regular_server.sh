@@ -28,10 +28,7 @@ fi
 server_file=$1
 port=$(get_avaliable_port)
 
-hostname= $(hostname)
-echo $hostname
-
 export PORT=$port
 
 # run the server, server should listen to hostname instead of localhost or 0.0.0.0
-echo "$($server_file) | grep -o 'Hosting server at: [^ ]*' | sed 's/Hosting server at: //'"
+echo "$($server_file) $(hostname) | grep -o 'Hosting server at: [^ ]*' | sed 's/Hosting server at: //'"
