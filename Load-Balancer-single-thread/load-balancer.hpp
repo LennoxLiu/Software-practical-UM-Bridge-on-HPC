@@ -36,7 +36,6 @@ public:
          if (!node_name.empty())
             node_name.pop_back(); // delete the line break
 
-        std::cout << "node_name = " << node_name << std::endl;
         std::cout << "Start server: "
                   << "bash ./start_regular_server.sh " + job_id + " " + node_name + " ./server.o" << std::endl;
         // start regular server in the node and return the hostname and port
@@ -48,6 +47,7 @@ public:
             exit(-1);
         }
 
+        std::cout<< "Hosting server at :" <<server_url<<std::endl;
         // Start a client
         umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 
