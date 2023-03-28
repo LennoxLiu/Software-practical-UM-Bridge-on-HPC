@@ -32,7 +32,7 @@ public:
         const std::string job_id = submitJob("sbatch regular-server.slurm");
         waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
 
-        const std::string server_url = readUrl();
+        const std::string server_url = readUrl(); // read server url from txt file
 
         /*
         // start a SLURM job for single request
