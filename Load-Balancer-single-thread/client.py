@@ -30,8 +30,5 @@ print(model.get_output_sizes())
 
 config = {}
 
-
-print(model([666],config))
-
-for i in range(3):
-    print(model([[i]],config))
+for i in range(100,104):
+    print(model([[i],],config))
