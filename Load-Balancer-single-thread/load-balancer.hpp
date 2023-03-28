@@ -145,12 +145,19 @@ private:
         do
         {
             job_id = getCommandOutput(sbatch_command);
+
+            // delete the line break
             if (!job_id.empty())
                 job_id.pop_back();
 
-            ++i;                                                         // delete the line break
-        } while (i < 3 && !waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+            ++i;
+        } while (i < 3 && waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
         // try 3 times
+
+        if (waitForJobState(job_id, "RUNNING") == false){
+            std::cout<< "Submit job failure."<< std::endl;
+            exit(-1);
+        }
 
         return job_id;
     }
