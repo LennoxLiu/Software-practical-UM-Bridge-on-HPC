@@ -54,11 +54,18 @@ public:
         }
         */
 
-        std::cout << "Hosting server at : " << server_url << std::endl;
+        std::cout << "Hosting sub-server at : " << server_url << std::endl;
 
-        std::cout << "Support model: "<< umbridge::SupportedModels(server_url)[0]<< std::endl;
+        // List supported models
+        std::vector<std::string> models = umbridge::SupportedModels(server_url);
+        std::cout << "Supported models: " << std::endl;
+        for (auto model : models)
+        {
+            std::cout << "  " << model << std::endl;
+        }
+
         // Start a client
-        umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
+        umbridge::HTTPModel client(server_url, "forward"); // use the first model avaliable on server by default
 
         // Pass the arguments and get the output
         std::vector<std::vector<double>> outputs = client.Evaluate(inputs, config);
