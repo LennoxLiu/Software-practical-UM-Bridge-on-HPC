@@ -30,6 +30,10 @@ public:
 
         // start a SLURM job for single request
         const std::string job_id = submitJob("sbatch regular-server.slurm");
+        waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+
+        const std::string server_url = readUrl();
+
         /*
         // start a SLURM job for single request
         const std::string job_id = submitJob("sbatch empty_job.slurm");
@@ -51,7 +55,8 @@ public:
         }
         */
 
-        std::cout << "Hosting server at :" << server_url << std::endl;
+        std::cout
+            << "Hosting server at :" << server_url << std::endl;
         // Start a client
         umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 
@@ -70,6 +75,24 @@ public:
     }
 
 private:
+    std::string readUrl()
+    {
+        std::ifstream file("url.txt");
+        std::string url;
+        if (file.is_open())
+        {
+            std::string file_contents((std::istreambuf_iterator<char>(file)),
+                                      (std::istreambuf_iterator<char>()));
+            url = file_contents;
+            file.close();
+        }
+        else
+        {
+            std::cerr << "Unable to open file url.txt ." << std::endl;
+        }
+
+        return url;
+    }
     // check whether the server starts successfully and return the url of server
     std::string checkAndGetURL(const std::string &input)
     {

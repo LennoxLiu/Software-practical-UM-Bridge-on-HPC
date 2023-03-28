@@ -4,6 +4,7 @@
 #SBATCH --time=00:10:00
 #SBATCH --mem=1gb
 
+server_file="./server.o"
 rm url.txt
 
 function get_avaliable_port {
@@ -23,14 +24,10 @@ function get_avaliable_port {
     echo $port
 }
 
-server_file="./server.o"
 port=$(get_avaliable_port)
-
-hostname= $(hostname)
-echo $hostname
-
 export PORT=$port
 
-# run the server, server should listen to hostname instead of localhost or 0.0.0.0
-echo " "$($server_file)" | grep -o 'Listening on port [^ ]*' | sed 's/Listening on port //'" > url.txt
+echo "http://$(hostname):$port" > url.txt
+
+$server_file
 
