@@ -64,6 +64,7 @@ public:
         // Cancel the SLURM job
         getCommandOutput("scancel " + job_id);
 
+        std::cout << "Result on server: " << outputs[0][0] << std::endl;
         return outputs; // return output as vector
     }
 
@@ -154,8 +155,9 @@ private:
         } while (i < 3 && waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
         // try 3 times
 
-        if (waitForJobState(job_id, "RUNNING") == false){
-            std::cout<< "Submit job failure."<< std::endl;
+        if (waitForJobState(job_id, "RUNNING") == false)
+        {
+            std::cout << "Submit job failure." << std::endl;
             exit(-1);
         }
 
@@ -176,7 +178,7 @@ private:
             if (!job_status.empty())
                 job_status.pop_back(); // delete the line break
 
-            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED" ) || job_status == "FAILED" || job_status == "CANCELLED")
+            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
             {
                 std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
                 return false;
