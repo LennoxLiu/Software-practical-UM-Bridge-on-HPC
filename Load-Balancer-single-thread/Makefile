@@ -1,6 +1,6 @@
 all: clear-server build-server run-server
 
-regular-server-obj =  ./eigen/minimal-server.cpp ./eigen/solver.hh ./eigen/matrix.hh ./eigen/matrix.cc
+regular-server-obj =  ./minimal-server.cpp
 slurm-server-obj = test-server.cpp load-balancer.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
 
 build-load-balancer:

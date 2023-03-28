@@ -23,13 +23,13 @@ print("Connecting to server at:", url)
 
 
 print(umbridge.supported_models(url))
-model = umbridge.HTTPModel(url, "slurm_LB")
+model = umbridge.HTTPModel(url, "forward")
 
 print(model.get_input_sizes())
 print(model.get_output_sizes())
 
-N = 3
 config = {}
 
 # print([matrix])
-print(model([[1,2,3],[4,5,6]],config))
+for i in range(3):
+    print(model([[i]],config))
