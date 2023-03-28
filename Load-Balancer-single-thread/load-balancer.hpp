@@ -16,25 +16,40 @@ public:
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
         // get size from the dummy server, can only make sense after starting a server
-        
+        return {2};
 
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        
+        return {4};
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
         std::cout<<"Request received in Load Balancer."<<std::endl;
         
-        // start a regular server for single request
-        // the regular servers should host at the hostname instead of 0.0.0.0 or localhost
+        
+        // start a SLURM job for single request
         const std::string job_id = submitJob("sbatch empty_job.slurm"); 
-        waitForJobState(job_id,"RUNNING"); // wait to start all regular servers
+        waitForJobState(job_id,"RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+
+        const std::string node_name = getCommandOutput("scontrol show job "+ job_id + " | grep -o 'NodeList=[^ ]*' | sed 's/NodeList=//'");
+        
+        // login to the computing node
+        std::string output = getCommandOutput( "srun --jobid="+job_id+" --nodelist="+node_name+" --pty /bin/bash && hostname"); // login to the computing node
+        if(output == node_name){
+            std::cout<< "Login success." << std::endl;
+        }else{
+            std::cerr<< "Login to computing node "+ node_name +" failed."<<std::endl;
+            exit(-1);
+        }
+        
+        // run a regular server at the hostname with appropriate port
+        command += "&& ./server.o "
 
         //start regular server in the node and return the hostname and port
+        // the regular servers should host at the hostname instead of 0.0.0.0 or localhost
 
 
 
@@ -52,6 +67,7 @@ public:
     }
 
 private:
+
     // check whether the server starts successfully and return the url of server
     std::string checkAndGetURL(const std::string& input){
         std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
@@ -71,6 +87,7 @@ private:
         }
         return "";
     }
+
     // run and get the result of command
     std::string getCommandOutput(const std::string command)
     {
