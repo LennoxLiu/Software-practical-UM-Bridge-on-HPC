@@ -29,5 +29,5 @@ export PORT=$port
 
 echo "http://$(hostname):$port" > url.txt # send the url to load-balancer
 
-$server_file
+$server_file $(hostname)
 
