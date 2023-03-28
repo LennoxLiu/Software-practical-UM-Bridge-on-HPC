@@ -27,8 +27,8 @@ helix-make: helix-build
 	- make run-server
 
 helix-build:
-	- scancel -u hd_lo305
-	- module load compiler/gnu
+	- echo `scancel -u hd_lo305`
+	- echo `module load compiler/gnu`
 	- git reset --hard
 	- git pull
 	- make build-server

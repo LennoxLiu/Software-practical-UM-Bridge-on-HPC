@@ -65,6 +65,10 @@ std::string getCommandOutput(const std::string command)
     }
     pclose(pipe);
 
+    //delete line break
+    if(!output.empty())
+        output.pop_back();
+
     return output;
 }
 
