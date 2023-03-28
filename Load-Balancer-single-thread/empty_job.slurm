@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --partition=devel
-#SBATCH --ntasks=1
+#SBATCH --ntasks=2
 #SBATCH --time=00:30:00
 #SBATCH --mem=1gb
 
