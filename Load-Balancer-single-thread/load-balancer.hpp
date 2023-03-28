@@ -33,7 +33,7 @@ public:
         waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
 
         std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o ' NodeList=[^ ]*' | sed 's/ NodeList=//'");
-         if (!node_name.empty())
+        if (!node_name.empty())
             node_name.pop_back(); // delete the line break
 
         std::cout << "Start server: "
@@ -47,7 +47,7 @@ public:
             exit(-1);
         }
 
-        std::cout<< "Hosting server at :" <<server_url<<std::endl;
+        std::cout << "Hosting server at :" << server_url << std::endl;
         // Start a client
         umbridge::HTTPModel client(server_url, umbridge::SupportedModels(server_url)[0]); // use the first model avaliable on server by default
 

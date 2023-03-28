@@ -31,6 +31,7 @@ server_file=$3
 port=get_avaliable_port
 
 hostname= $(srun --jobid=$job_id  --nodelist=$node_name /bin/bash && hostname)
+echo $hostname
 
 if ["$node_name" != "$hostname" ]; then
     echo "Login to computing node $node_name failed."
