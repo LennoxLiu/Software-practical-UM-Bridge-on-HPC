@@ -4,6 +4,8 @@
 #SBATCH --time=00:10:00
 #SBATCH --mem=1gb
 
+rm url.txt
+
 function get_avaliable_port {
     # Define the range of ports to select from
     MIN_PORT=1024
