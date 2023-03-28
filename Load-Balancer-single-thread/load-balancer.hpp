@@ -176,7 +176,7 @@ private:
             if (!job_status.empty())
                 job_status.pop_back(); // delete the line break
 
-            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED" ) || job_status == "Failed" || job_status == "CANCELLED")
+            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED" ) || job_status == "FAILED" || job_status == "CANCELLED")
             {
                 std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
                 return false;
