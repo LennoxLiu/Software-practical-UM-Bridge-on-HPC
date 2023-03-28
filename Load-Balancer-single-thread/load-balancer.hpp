@@ -182,7 +182,7 @@ private:
                 return false;
             }
             // std::cout<<"Job status: "<<job_status<<std::endl;
-            sleep(5);
+            sleep(1);
         } while (job_status != state);
 
         return true;

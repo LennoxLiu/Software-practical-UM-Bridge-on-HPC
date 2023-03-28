@@ -27,7 +27,7 @@ function get_avaliable_port {
 port=$(get_avaliable_port)
 export PORT=$port
 
-echo "http://$(hostname):$port" > url.txt
+# echo "http://$(hostname):$port" > url.txt
 
 $server_file
 
