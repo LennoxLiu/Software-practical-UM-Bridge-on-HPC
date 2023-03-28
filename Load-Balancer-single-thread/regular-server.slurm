@@ -21,15 +21,7 @@ function get_avaliable_port {
     echo $port
 }
 
-# Check that the correct number of arguments have been passed
-if [ $# -ne 1 ]
-then
-    echo "Usage: $0 server_file"
-    echo $@
-    exit 1
-fi
-
-server_file=$1
+server_file="./server.o"
 port=$(get_avaliable_port)
 
 hostname= $(hostname)
