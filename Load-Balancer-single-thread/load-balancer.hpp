@@ -34,6 +34,9 @@ public:
 
         const std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o 'NodeList=[^ ]*' | sed 's/NodeList=//'");
 
+        std::cout << "node_name = " << node_name << std::endl;
+        std::cout << "Start server: "
+                  << "bash ./start_regular_server.sh " + job_id + " " + node_name + " ./server.o" << std::endl;
         // start regular server in the node and return the hostname and port
         //  the regular servers should host at the hostname instead of 0.0.0.0 or localhost
         const std::string server_url = getCommandOutput("bash ./start_regular_server.sh " + job_id + " " + node_name + " ./server.o");
