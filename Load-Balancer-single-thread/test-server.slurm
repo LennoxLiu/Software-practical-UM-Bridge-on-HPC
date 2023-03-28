@@ -6,7 +6,4 @@
 
 make clear-server
 make build-server
-host=$(srun hostname)
-echo $host > hostname.txt
-./server.o $host
-rm hostname.txt
+make run-server

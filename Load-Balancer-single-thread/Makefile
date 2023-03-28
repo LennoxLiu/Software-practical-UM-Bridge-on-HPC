@@ -1,10 +1,17 @@
 all: clear-server build-server run-server
 
-regular-server-obj =  ./exahype-tsunami/server.cpp
+regular-server-obj =  ./eigen/minimal-server.cpp ./eigen/solver.hh ./eigen/matrix.hh ./eigen/matrix.cc
 slurm-server-obj = test-server.cpp load-balancer.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
-build-server:
+
+build-load-balancer:
 	- g++ -O3 -Wall -std=c++11 $(slurm-server-obj) $(regular-server-obj) -o load-balancer.o -lssl -lcrypto -pthread
-	- g++ -O3 -Wall -std=c++11 $(regular-server-obj) -o server.o -lssl -lcrypto -pthread
+
+build-regular-server:
+	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server.o -lssl -lcrypto -pthread
+
+build-server:
+	- make build-load-balancer
+	- make build-regular-server
 
 run-server: load-balancer.o
 	- ./load-balancer.o

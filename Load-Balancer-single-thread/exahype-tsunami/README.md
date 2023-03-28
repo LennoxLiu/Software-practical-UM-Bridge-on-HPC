@@ -1,24 +1,43 @@
-# Tsunami
+# Tsunami source inference
 
 ## Overview
 In this benchmark we model the propagation of the 2011 Tohoku tsunami by solving the shallow water equations. For the numerical solution of the PDE, we apply an ADER-DG method implemented in the [ExaHyPE framework](https://www.sciencedirect.com/science/article/pii/S001046552030076X). The aim is to obtain the parameters describing the initial displacements from the data of two available buoys located near the Japanese coast.
 
-![Tsunami-Model](https://raw.githubusercontent.com/UM-Bridge/benchmarks/main/docs/source/images/tohoku_full.png "Level Hierarchy for Tohoku Tsunami Model")
-
 ## Authors
 - [Anne Reinarz](mailto:anne.k.reinarz@durham.ac.uk)
+- [Linus Seelinger](mailto:linus.seelinger@iwr.uni-heidelberg.de)
 
 ## Run
 
 ```
-docker run -it -p 4242:4242 linusseelinger/model-exahype-tsunami
+docker run -it -p 4243:4243 linusseelinger/benchmark-exahype-tsunami
 ```
 
 ## Properties
 
 Model | Description
 ---|---
-forward | Tsunami model
+posterior | Posterior density
+forward | Forward model
+
+### posterior
+Mapping | Dimensions | Description
+---|---|---
+input | [2] | x and y coordinates of a proposed tsunami origin
+output | [1] | Log posterior density
+
+Feature | Supported
+---|---
+Evaluate | True
+Gradient | False
+ApplyJacobian | False
+ApplyHessian | False
+
+Config | Type | Default | Description
+---|---|---|---
+level | int | 0 | chooses the model level to run (see below for further details)
+verbose | bool | false | switches text output on/off
+vtk_output | bool | false | switches vtk output to the /output directory on/off
 
 ### forward
 Mapping | Dimensions | Description
@@ -39,6 +58,7 @@ level | int | 0 | between 0 and 2, the model level to run (see below for further
 verbose | bool | false | switches text output on/off
 vtk_output | bool | false | switches vtk output to the /output directory on/off
 
+
 ## Mount directories
 Mount directory | Purpose
 ---|---
@@ -46,48 +66,22 @@ Mount directory | Purpose
 
 ## Source code
 
-[Model sources here.](https://github.com/UM-Bridge/benchmarks/tree/main/models/exahype-tsunami)
+[Model sources here.](https://github.com/UM-Bridge/benchmarks/tree/main/benchmarks/exahype-tsunami)
 
 ## Description
 
-The underlying PDE model can be written in first-order hyperbolic form as
+The likelihood of a given set of parameters given the simulation results is computed using weighted average of the maximal wave height and the time at which it is reached.
+The likelihood is given by a normal distribution $\mathcal{N}\left(\mu, \Sigma \right)$ with mean $\mu$ given by maximum waveheight $\max\{h\}$ and the time $t$ at which it is reached for the the two DART buoys 21418 and 21419 (This data can be obtained from [NDBC](https://www.ndbc.noaa.gov/)).
+The covariance matrix $\Sigma$ depends on the level, but not the probe point.
 
-$
-    \frac{\partial}{\partial t}
-    \begin{pmatrix}
-    h\\hu\\hv\\ b
-    \end{pmatrix} + \nabla \cdot
-    \begin{pmatrix}
-    hu   &   hv\\
-    hu^2 & huv\\
-    huv & hv^2 \\
-    0 & 0\\
-    \end{pmatrix}+
-    \begin{pmatrix}
-    0\\
-    hg \, \partial_x (b+h)\\
-    hg \, \partial_y (b+h)\\
-    0\\
-    \end{pmatrix}= 0,
-$
+| $\mu$   | $\Sigma$ l=0 |  $\Sigma$ l=1 |  $\Sigma$ l=2 |
+|---------|--------------|---------------|---------------|
+| 1.85232 | 0.15         | 0.1           | 0.1           |
+| 0.6368  | 0.15         | 0.1           | 0.1           |
+| 30.23   | 2.5          | 1.5           | 0.75          |
+| 87.98   | 2.5          | 1.5           | 0.75          |
 
-where
-- $h$ denotes the height of the water column,
-- $(u,v)$ the horizontal flow velocity,
-- $g$  gravity
-- $b$ denotes the bathymetry.
+The prior cuts off all parameters which would lead to an initial displacement which is too close to the domain boundary.
+Some parameters may lead to unstable models, e.g. a parameter which initialise the tsunami on dry land, in this case we have treated the parameter as unphysical and assigned an almost zero likelihood.
 
-This benchmark creates a sequence of three models:
-1. First model:
-    - bathymetry is approximated only by a depth average over the entire domain
-    - pure DG discretisation of order 2
-2. The second model:
-    - DG discretisation with a finite volume subcell limiter allowing for wetting and drying
-    - smoothed bathymetry data (Gaussian filter)
-3. The third model:
-    - DG discretisation with a finite volume subcell limiter allowing for wetting and drying
-    - full bathymetry data
-
-- The bathymetry data has been obtained from [GEBCO](https://www.gebco.net/)
-- More details: [Reference Paper](https://dl.acm.org/doi/10.1145/3458817.3476150)
-
+The parallel MLMCMC was implemented in the [MUQ library](https://joss.theoj.org/papers/10.21105/joss.03076).
