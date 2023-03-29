@@ -99,6 +99,10 @@ private:
             std::cerr << "Unable to open file url.txt ." << std::endl;
         }
 
+        // delete the line break
+        if(!url.empty())
+            url.pop_back()
+
         return url;
     }
     // check whether the server starts successfully and return the url of server
