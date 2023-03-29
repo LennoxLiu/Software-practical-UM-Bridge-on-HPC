@@ -101,7 +101,7 @@ private:
 
         // delete the line break
         if(!url.empty())
-            url.pop_back()
+            url.pop_back();
 
         return url;
     }
