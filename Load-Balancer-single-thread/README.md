@@ -9,15 +9,13 @@
     > Sometimes the default port 4242 of the login node is occupied.
 
 3. Compile and run the server
-    - Build and run on login node: `make helix-make`
+    - Pull from the repo and build the server: `make helix-build`
     
-    > Pull from the repo and build the server: `make helix-build`
-    
-    - Run on computing node: `sbatch test-server.slurm`
+    - Run on computing node: `make run-server`
 
-> The script of SLURM job will create  a file named "hostname.txt", and write the hostname of the computing node( main server) into it.
->
-> The main server will submit a new basic SLURM job whenever it receives an evaluation request.
+> The Load Balancer will submit a new SLURM job whenever it receives an evaluation request, and cancel the SLURM job when the evaluation is finished.
+> The Load Balancer will listen to the hostname of node instead of localhost.
+> The regular server in SLURM job will also listen to the hostname and use a random port that is not in use.
 
 ## How to run client on Helix
 
