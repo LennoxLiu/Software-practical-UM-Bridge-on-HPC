@@ -8,3 +8,4 @@ module load compiler/gnu
 make clear-server
 make build-server
 make run-server
+mkdir ./slurm
