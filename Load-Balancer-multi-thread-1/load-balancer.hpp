@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
+#include <filesystem>
 #include "../lib/umbridge.h"
 
 // run and get the result of command
@@ -34,7 +35,7 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
 {
     std::string command;
     command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-    std::cout << "Checking runtime: " << command << std::endl;
+    // std::cout << "Checking runtime: " << command << std::endl;
     std::string job_status;
 
     do
@@ -56,11 +57,32 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
     return true;
 }
 
-// return job id
+// Check for every 100 ms, wait for maximum 10 second
+bool waitForFile(const std::string &filename)
+{
+    std::filesystem::path filePath(filename);
+    int wait_max = 100; // wait for maximum (about) 10 second
+
+    int i = 0;
+    while (!std::filesystem::exists(filePath) && i < wait_max)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait 100 ms before checking again
+        ++i;
+    }
+
+    if (!std::filesystem::exists(filePath))
+    {
+        std::cerr << "Fail to wait for file: " << filename << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// Start a slurm job and return job id
 std::string submitJob(const std::string &command)
 {
-    std::string sbatch_command;
-    sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
+    std::string sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
     std::cout << "Submitting job with command: " << command << std::endl;
 
     std::string job_id;
@@ -69,15 +91,19 @@ std::string submitJob(const std::string &command)
     {
         job_id = getCommandOutput(sbatch_command);
 
-        // delete the line break
+        // Delete the line break
         if (!job_id.empty())
             job_id.pop_back();
 
         ++i;
-    } while (i < 3 && waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
-    // try 3 times
 
-    if (waitForJobState(job_id, "RUNNING") == false)
+    } while (i < 3 && (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt") == false));
+    // Wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+    // Also wait until job is running and url file is written
+    // Try maximum 3 times
+
+    // Check if the job is running
+    if (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt") == false)
     {
         std::cout << "Submit job failure." << std::endl;
         exit(-1);
@@ -109,8 +135,6 @@ std::string readUrl(const std::string &filename)
     return url;
 }
 
-
-
 /*
     // check whether the server starts successfully and return the url of server
     std::string checkAndGetURL(const std::string &input)
@@ -133,7 +157,6 @@ std::string readUrl(const std::string &filename)
         return "";
     }
 */
-
 
 class SingleSlurmJob
 {
