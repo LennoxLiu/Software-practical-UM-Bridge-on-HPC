@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include "../lib/umbridge.h"
 
 // run and get the result of command
@@ -60,17 +60,17 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
 // Check for every 100 ms, wait for maximum 10 second
 bool waitForFile(const std::string &filename)
 {
-    std::filesystem::path filePath(filename);
+    boost::filesystem::path filePath(filename);
     int wait_max = 100; // wait for maximum (about) 10 second
 
     int i = 0;
-    while (!std::filesystem::exists(filePath) && i < wait_max)
+    while (!boost::filesystem::exists(filePath) && i < wait_max)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // wait 100 ms before checking again
         ++i;
     }
 
-    if (!std::filesystem::exists(filePath))
+    if (!boost::filesystem::exists(filePath))
     {
         std::cerr << "Fail to wait for file: " << filename << std::endl;
         return false;

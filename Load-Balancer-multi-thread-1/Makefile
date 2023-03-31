@@ -4,7 +4,7 @@ regular-server-obj =  ./minimal-server.cpp
 slurm-server-obj = test-server.cpp load-balancer.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
 
 build-load-balancer:
-	- g++ -O3 -Wno-unused-result -std=c++17 $(slurm-server-obj) -o load-balancer.o -lssl -lcrypto -pthread
+	- g++ -O3 -Wno-unused-result -std=c++14 $(slurm-server-obj) -o load-balancer.o -lssl -lcrypto -pthread
 
 build-regular-server:
 	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server.o -lssl -lcrypto -pthread
