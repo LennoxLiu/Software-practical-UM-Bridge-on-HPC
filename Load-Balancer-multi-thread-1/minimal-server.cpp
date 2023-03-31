@@ -94,7 +94,10 @@ int main(int argc, char *argv[])
 
     // Set up and serve model
     ExampleModel model(test_delay);
-    std::string hostname;
+    
+    
+    std::string hostname = "0.0.0.0";
+    /*
     if (argc == 2)
     {
         hostname = argv[1];
@@ -106,6 +109,7 @@ int main(int argc, char *argv[])
         if (!hostname.empty())
             hostname.pop_back();
     }
+    */
     std::cout << "Hosting server at : "
               << "http://" << hostname << ":" << port << std::endl;
     umbridge::serveModels({&model}, hostname, port); // start server at the hostname
