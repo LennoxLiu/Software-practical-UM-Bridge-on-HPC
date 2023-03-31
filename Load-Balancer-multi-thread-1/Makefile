@@ -14,6 +14,8 @@ build-server:
 	- make build-regular-server
 
 run-server: load-balancer.o
+	- mkdir -p ./urls
+	- mkdir -p ./slurm
 	- ./load-balancer.o
 
 run-client: client.py
