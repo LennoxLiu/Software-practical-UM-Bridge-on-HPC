@@ -3,9 +3,9 @@
 #SBATCH --ntasks=1
 #SBATCH --time=00:10:00
 #SBATCH --mem=1gb
+#SBATCH --output=./slurm/slurm-$SLURM_JOB_ID.txt
 
 server_file="./server.o"
-rm url.txt
 
 function get_avaliable_port {
     # Define the range of ports to select from

@@ -212,40 +212,4 @@ public:
     }
 
 private:
-    /*
-        std::tuple<std::string, std::unique_ptr<umbridge::HTTPModel>> startSingleJob()
-        {
-            std::cout << "Request received in Load Balancer." << std::endl;
-
-            // start a SLURM job for single request
-            const std::string job_id = submitJob("sbatch regular-server.slurm");
-
-            const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
-            // May use $SLURM_LOCALID in a .slurm file later
-
-            std::cout << "Hosting sub-server at : " << server_url << std::endl;
-
-            // List supported models
-            std::vector<std::string> models = umbridge::SupportedModels(server_url);
-            std::cout << "Supported models: " << std::endl;
-            for (auto model : models)
-            {
-                std::cout << "  " << model << std::endl;
-            }
-
-            // Start a client, using unique pointer
-            std::unique_ptr<umbridge::HTTPModel> client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, models[0]); // use the first model avaliable on server by default
-
-            return {job_id, std::move(client_ptr)};
-        }
-
-        void clearSingleJob(const std::string &job_id)
-        {
-            // Cancel the SLURM job
-            getCommandOutput("scancel " + job_id);
-
-            // Delete the url text file
-            std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
-        }
-    */
 };
