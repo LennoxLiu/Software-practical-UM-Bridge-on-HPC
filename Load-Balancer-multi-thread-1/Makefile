@@ -28,10 +28,10 @@ helix-make: helix-build
 
 helix-build:
 	- echo `module load compiler/gnu`
-	- git reset --hard
-	- git pull
+	- make helix-update
 	- make build-server
 
 helix-update:
+	- git config --global credential.helper 'cache --timeout=86400'
 	- git reset --hard
 	- git pull
