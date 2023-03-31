@@ -7,9 +7,5 @@
 module load compiler/gnu
 make clear-server
 make build-server
-
-mkdir -p ./slurm
-mkdir -p ./urls
-
 make run-server
 

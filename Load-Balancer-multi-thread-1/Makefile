@@ -15,7 +15,8 @@ build-server:
 
 run-server: load-balancer.o
 	- mkdir -p ./urls
-	- mkdir -p ./slurm
+	- mkdir -p ./sub-jobs
+
 	- ./load-balancer.o
 
 run-client: client.py
