@@ -66,7 +66,8 @@ bool waitForFile(const std::string &filename, int time_out = 20)
     std::system(command.c_str());
     auto end_time = std::chrono::steady_clock::now();
 
-    if (end_time - start_time > timeout) {
+    if (end_time - start_time > timeout)
+    {
         std::cerr << "Timeout reached waiting for file " << filename << std::endl;
         return false;
     }
@@ -92,13 +93,13 @@ std::string submitJob(const std::string &command)
 
         ++i;
 
-    } while (i < 3 && (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt") == false));
+    } while (waitForJobState(job_id, "RUNNING") == false && i < 3 && waitForFile("./urls/url-" + job_id + ".txt", 20) == false);
     // Wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
     // Also wait until job is running and url file is written
     // Try maximum 3 times
 
     // Check if the job is running
-    if (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt") == false)
+    if (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt", 5) == false)
     {
         std::cout << "Submit job failure." << std::endl;
         exit(-1);
