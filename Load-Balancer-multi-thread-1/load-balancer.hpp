@@ -99,7 +99,7 @@ std::string submitJob(const std::string &command)
     // Try maximum 3 times
 
     // Check if the job is running
-    if (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt", 5) == false)
+    if (waitForJobState(job_id, "RUNNING") == false || waitForFile("./urls/url-" + job_id + ".txt", 10) == false)
     {
         std::cout << "Submit job failure." << std::endl;
         exit(-1);
