@@ -183,12 +183,14 @@ public:
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
         // get size from the dummy server, can only make sense after starting a server
-        return {1};
+        SingleSlurmJob slurm_job; // start a new SLURM job;
+        return slurm_job.client_ptr->GetInputSizes(config_json);
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        return {1};
+        SingleSlurmJob slurm_job; // start a new SLURM job;
+        return slurm_job.client_ptr->GetOutputSizes(config_json);
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
@@ -205,7 +207,8 @@ public:
 
     bool SupportsEvaluate() override
     {
-        return true;
+        SingleSlurmJob slurm_job; // start a new SLURM job;
+        return slurm_job.client_ptr->SupportsEvaluate();
     }
 
 private:
