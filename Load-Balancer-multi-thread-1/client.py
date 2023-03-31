@@ -41,7 +41,7 @@ print(model.get_output_sizes())
 
 config = {}
 
-print(model([[1.1],], config))
+print(model([[1.01],], config))
 
 for i in range(100, 104):
     print(model([[i+0.001*i],], config))
