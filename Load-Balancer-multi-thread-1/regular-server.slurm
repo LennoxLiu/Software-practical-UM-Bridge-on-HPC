@@ -3,7 +3,7 @@
 #SBATCH --ntasks=1
 #SBATCH --time=00:10:00
 #SBATCH --mem=1gb
-#SBATCH --output=slurm/$SLURM_JOB_ID.txt
+#SBATCH --output=slurm/%j.out
 
 server_file="./server.o"
 
