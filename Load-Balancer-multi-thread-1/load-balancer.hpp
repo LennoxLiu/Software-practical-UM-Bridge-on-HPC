@@ -56,11 +56,11 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
     return true;
 }
 
-// Check for every 100 ms, wait for maximum 10 second
-bool waitForFile(const std::string &filename)
+// Check for every 100 ms, wait for maximum 20 second
+bool waitForFile(const std::string &filename, int time_out = 20)
 {
     auto start_time = std::chrono::steady_clock::now();
-    auto timeout = std::chrono::seconds(10); // wait for maximum 10 seconds
+    auto timeout = std::chrono::seconds(time_out); // wait for maximum 10 seconds
 
     std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
     std::system(command.c_str());
