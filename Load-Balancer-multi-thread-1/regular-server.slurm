@@ -27,7 +27,8 @@ function get_avaliable_port {
 port=$(get_avaliable_port)
 export PORT=$port
 
-echo "http://$(hostname):$port" > url.txt # send the url to load-balancer
+mkdir -p ./urls
+echo "http://$(hostname):$port" > ./urls/url-$SLURM_JOB_ID.txt # send the url to load-balancer
 
 $server_file $(hostname)
 

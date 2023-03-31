@@ -3,10 +3,174 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <cstdio>
+#include <cstdlib>
+#include <tuple>
+#include <memory>
 #include "../lib/umbridge.h"
 
-#define REGULAR_SERVER "./server.o" // only support C++ server for now
+// return job id
+std::string submitJob(const std::string &command)
+{
+    std::string sbatch_command;
+    sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
+    std::cout << "Submitting job with command: " << command << std::endl;
+
+    std::string job_id;
+    int i = 0;
+    do
+    {
+        job_id = getCommandOutput(sbatch_command);
+
+        // delete the line break
+        if (!job_id.empty())
+            job_id.pop_back();
+
+        ++i;
+    } while (i < 3 && waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
+    // try 3 times
+
+    if (waitForJobState(job_id, "RUNNING") == false)
+    {
+        std::cout << "Submit job failure." << std::endl;
+        exit(-1);
+    }
+
+    return job_id;
+}
+
+std::string readUrl(const std::string &filename)
+{
+    std::ifstream file(filename);
+    std::string url;
+    if (file.is_open())
+    {
+        std::string file_contents((std::istreambuf_iterator<char>(file)),
+                                  (std::istreambuf_iterator<char>()));
+        url = file_contents;
+        file.close();
+    }
+    else
+    {
+        std::cerr << "Unable to open file " << filename << " ." << std::endl;
+    }
+
+    // delete the line break
+    if (!url.empty())
+        url.pop_back();
+
+    return url;
+}
+
+// state = ["PENDING","RUNNING","COMPLETED","FAILED","CANCELLED"]
+bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
+{
+    std::string command;
+    command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
+    std::cout << "Checking runtime: " << command << std::endl;
+    std::string job_status;
+
+    do
+    {
+        job_status = getCommandOutput(command);
+        if (!job_status.empty())
+            job_status.pop_back(); // delete the line break
+
+        // Don't wait if there is an error or the job is ended
+        if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
+        {
+            std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
+            return false;
+        }
+        // std::cout<<"Job status: "<<job_status<<std::endl;
+        sleep(1);
+    } while (job_status != state);
+
+    return true;
+}
+
+/*
+    // check whether the server starts successfully and return the url of server
+    std::string checkAndGetURL(const std::string &input)
+    {
+        std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
+        std::smatch match;
+        std::smatch match_url;
+        std::regex url_regex("(http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
+        std::stringstream ss;
+        if (std::regex_search(input, match, server_regex)) // check if the server starts
+        {
+            ss << match[0];
+            std::string input2 = ss.str();
+            if (std::regex_search(input2, match_url, url_regex))
+            {
+                // std::cout << "Found URL: " << match_url[0] << std::endl;
+                return match_url[0];
+            }
+        }
+        return "";
+    }
+*/
+
+// run and get the result of command
+std::string getCommandOutput(const std::string command)
+{
+    FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
+    if (!pipe)
+    {
+        std::cerr << "Failed to execute the command: " + command << std::endl;
+        return "";
+    }
+
+    char buffer[128];
+    std::string output;
+    while (fgets(buffer, 128, pipe))
+    {
+        output += buffer;
+    }
+    pclose(pipe);
+
+    return output;
+}
+
+class SingleSlurmJob
+{
+public:
+    SingleSlurmJob()
+    {
+        // start a SLURM job for single request
+        job_id = submitJob("sbatch regular-server.slurm");
+
+        const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
+        // May use $SLURM_LOCALID in a .slurm file later
+
+        std::cout << "Hosting sub-server at : " << server_url << std::endl;
+
+        // List supported models
+        std::vector<std::string> models = umbridge::SupportedModels(server_url);
+        std::cout << "Supported models: " << std::endl;
+        for (auto model : models)
+        {
+            std::cout << "  " << model << std::endl;
+        }
+
+        // Start a client, using unique pointer
+        client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, models[0]); // use the first model avaliable on server by default
+    }
+
+    ~SingleSlurmJob()
+    {
+        // Cancel the SLURM job
+        getCommandOutput("scancel " + job_id);
+
+        // Delete the url text file
+        std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
+    }
+
+    std::unique_ptr<umbridge::HTTPModel> client_ptr;
+
+private:
+    std::string job_id;
+};
 
 class LoadBalancer : public umbridge::Model
 {
@@ -28,52 +192,11 @@ public:
     {
         std::cout << "Request received in Load Balancer." << std::endl;
 
-        // start a SLURM job for single request
-        const std::string job_id = submitJob("sbatch regular-server.slurm");
-
-        const std::string server_url = readUrl(); // read server url from txt file
-
-        /*
-        // start a SLURM job for single request
-        const std::string job_id = submitJob("sbatch empty_job.slurm");
-        waitForJobState(job_id, "RUNNING"); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
-
-        std::string node_name = getCommandOutput("scontrol show job " + job_id + " | grep -o ' NodeList=[^ ]*' | sed 's/ NodeList=//'");
-        if (!node_name.empty())
-            node_name.pop_back(); // delete the line break
-
-        std::cout << "Start server: "
-                  << "bash ./start_regular_server.sh " + job_id + " " + node_name + " ./server.o" << std::endl;
-        // start regular server in the node and return the hostname and port
-        //  the regular servers should host at the hostname instead of 0.0.0.0 or localhost
-        const std::string server_url = getCommandOutput("bash ./start_regular_server.sh " + job_id + " " + node_name + " ./server.o");
-        if (server_url.substr(0, 4) != "http")
-        {
-            std::cerr << "Start regular server failed." << std::endl;
-            exit(-1);
-        }
-        */
-
-        std::cout << "Hosting sub-server at : " << server_url << std::endl;
-
-        // List supported models
-        std::vector<std::string> models = umbridge::SupportedModels(server_url);
-        std::cout << "Supported models: " << std::endl;
-        for (auto model : models)
-        {
-            std::cout << "  " << model << std::endl;
-        }
-
-        // Start a client
-        umbridge::HTTPModel client(server_url, "forward"); // use the first model avaliable on server by default
+        SingleSlurmJob slurm_job; // start a new SLURM job
 
         // Pass the arguments and get the output
-        std::vector<std::vector<double>> outputs = client.Evaluate(inputs, config);
+        std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config);
 
-        // Cancel the SLURM job
-        getCommandOutput("scancel " + job_id);
-
-        std::cout << "Result on server: " << outputs[0][0] << std::endl;
         return outputs; // return output as vector
     }
 
@@ -83,188 +206,40 @@ public:
     }
 
 private:
-    std::string readUrl()
-    {
-        std::ifstream file("url.txt");
-        std::string url;
-        if (file.is_open())
+    /*
+        std::tuple<std::string, std::unique_ptr<umbridge::HTTPModel>> startSingleJob()
         {
-            std::string file_contents((std::istreambuf_iterator<char>(file)),
-                                      (std::istreambuf_iterator<char>()));
-            url = file_contents;
-            file.close();
-        }
-        else
-        {
-            std::cerr << "Unable to open file url.txt ." << std::endl;
-        }
+            std::cout << "Request received in Load Balancer." << std::endl;
 
-        // delete the line break
-        if(!url.empty())
-            url.pop_back();
+            // start a SLURM job for single request
+            const std::string job_id = submitJob("sbatch regular-server.slurm");
 
-        return url;
-    }
-    // check whether the server starts successfully and return the url of server
-    std::string checkAndGetURL(const std::string &input)
-    {
-        std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
-        std::smatch match;
-        std::smatch match_url;
-        std::regex url_regex("(http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
-        std::stringstream ss;
-        if (std::regex_search(input, match, server_regex)) // check if the server starts
-        {
-            ss << match[0];
-            std::string input2 = ss.str();
-            if (std::regex_search(input2, match_url, url_regex))
+            const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
+            // May use $SLURM_LOCALID in a .slurm file later
+
+            std::cout << "Hosting sub-server at : " << server_url << std::endl;
+
+            // List supported models
+            std::vector<std::string> models = umbridge::SupportedModels(server_url);
+            std::cout << "Supported models: " << std::endl;
+            for (auto model : models)
             {
-                // std::cout << "Found URL: " << match_url[0] << std::endl;
-                return match_url[0];
+                std::cout << "  " << model << std::endl;
             }
-        }
-        return "";
-    }
 
-    // run and get the result of command
-    std::string getCommandOutput(const std::string command)
-    {
-        FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
-        if (!pipe)
-        {
-            std::cerr << "Failed to execute the command: " + command << std::endl;
-            return "";
+            // Start a client, using unique pointer
+            std::unique_ptr<umbridge::HTTPModel> client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, models[0]); // use the first model avaliable on server by default
+
+            return {job_id, std::move(client_ptr)};
         }
 
-        char buffer[128];
-        std::string output;
-        while (fgets(buffer, 128, pipe))
+        void clearSingleJob(const std::string &job_id)
         {
-            output += buffer;
+            // Cancel the SLURM job
+            getCommandOutput("scancel " + job_id);
+
+            // Delete the url text file
+            std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
         }
-        pclose(pipe);
-
-        return output;
-    }
-
-    // return job id
-    std::string submitJob(const std::string &command)
-    {
-        std::string sbatch_command;
-        sbatch_command = command + " | awk '{print $4}'"; // extract job ID from sbatch output
-        std::cout << "Submitting job with command: " << command << std::endl;
-
-        std::string job_id;
-        int i = 0;
-        do
-        {
-            job_id = getCommandOutput(sbatch_command);
-
-            // delete the line break
-            if (!job_id.empty())
-                job_id.pop_back();
-
-            ++i;
-        } while (i < 3 && waitForJobState(job_id, "RUNNING") == false); // wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
-        // try 3 times
-
-        if (waitForJobState(job_id, "RUNNING") == false)
-        {
-            std::cout << "Submit job failure." << std::endl;
-            exit(-1);
-        }
-
-        return job_id;
-    }
-
-    // state = ["PENDING","RUNNING","COMPLETED"]
-    bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
-    {
-        std::string command;
-        command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-        std::cout << "Checking runtime: " << command << std::endl;
-        std::string job_status;
-
-        do
-        {
-            job_status = getCommandOutput(command);
-            if (!job_status.empty())
-                job_status.pop_back(); // delete the line break
-
-            if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
-            {
-                std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
-                return false;
-            }
-            // std::cout<<"Job status: "<<job_status<<std::endl;
-            sleep(1);
-        } while (job_status != state);
-
-        return true;
-    }
-
-    std::string getCommand(const std::vector<std::vector<double>> &input, std::string outputFile = "output.txt")
-    {
-        std::string command;
-        command += "sbatch add_one.slurm ";
-        command += writeToFile(input);
-        command += " " + outputFile;
-        return command;
-    }
-
-    void getOutput(std::vector<std::vector<double>> &output, const std::string filename = "output.txt")
-    {
-        readFromFile(output, filename);
-    }
-
-    std::string writeToFile(const std::vector<std::vector<double>> &data, const std::string &filename = "parameters.txt")
-    {
-        std::ofstream file(filename);
-
-        if (!file.is_open())
-        {
-            std::cerr << "Error opening file" << std::endl;
-            return "";
-        }
-
-        for (const auto &row : data)
-        {
-            for (const auto &elem : row)
-            {
-                file << elem << " ";
-            }
-            file << std::endl;
-        }
-
-        file.close();
-
-        return filename; // return the name of output file
-    }
-
-    // write the data to output vector
-    void readFromFile(std::vector<std::vector<double>> &output, const std::string &filename)
-    {
-        std::ifstream file(filename);
-
-        if (!file.is_open())
-        {
-            std::cerr << "Error opening file" << std::endl;
-            return;
-        }
-
-        std::string line;
-        while (std::getline(file, line))
-        {
-            std::vector<double> row;
-            std::stringstream ss(line);
-            double elem;
-            while (ss >> elem)
-            {
-                row.push_back(elem);
-            }
-            output.push_back(row);
-        }
-
-        file.close();
-    }
+    */
 };
