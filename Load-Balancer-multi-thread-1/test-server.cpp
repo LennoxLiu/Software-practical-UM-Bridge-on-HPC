@@ -9,27 +9,6 @@
 
 #include "../lib/umbridge.h"
 
-// run and get the result of command
-std::string getCommandOutput(const std::string command)
-{
-    FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
-    if (!pipe)
-    {
-        std::cerr << "Failed to execute the command: " + command << std::endl;
-        return "";
-    }
-
-    char buffer[128];
-    std::string output;
-    while (fgets(buffer, 128, pipe))
-    {
-        output += buffer;
-    }
-    pclose(pipe);
-
-    return output;
-}
-
 int main(int argc, char *argv[])
 {
 

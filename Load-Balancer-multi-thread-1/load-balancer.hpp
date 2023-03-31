@@ -8,6 +8,54 @@
 #include <memory>
 #include "../lib/umbridge.h"
 
+// run and get the result of command
+std::string getCommandOutput(const std::string command)
+{
+    FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
+    if (!pipe)
+    {
+        std::cerr << "Failed to execute the command: " + command << std::endl;
+        return "";
+    }
+
+    char buffer[128];
+    std::string output;
+    while (fgets(buffer, 128, pipe))
+    {
+        output += buffer;
+    }
+    pclose(pipe);
+
+    return output;
+}
+
+// state = ["PENDING","RUNNING","COMPLETED","FAILED","CANCELLED"]
+bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
+{
+    std::string command;
+    command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
+    std::cout << "Checking runtime: " << command << std::endl;
+    std::string job_status;
+
+    do
+    {
+        job_status = getCommandOutput(command);
+        if (!job_status.empty())
+            job_status.pop_back(); // delete the line break
+
+        // Don't wait if there is an error or the job is ended
+        if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
+        {
+            std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
+            return false;
+        }
+        // std::cout<<"Job status: "<<job_status<<std::endl;
+        sleep(1);
+    } while (job_status != state);
+
+    return true;
+}
+
 // return job id
 std::string submitJob(const std::string &command)
 {
@@ -61,32 +109,7 @@ std::string readUrl(const std::string &filename)
     return url;
 }
 
-// state = ["PENDING","RUNNING","COMPLETED","FAILED","CANCELLED"]
-bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
-{
-    std::string command;
-    command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-    std::cout << "Checking runtime: " << command << std::endl;
-    std::string job_status;
 
-    do
-    {
-        job_status = getCommandOutput(command);
-        if (!job_status.empty())
-            job_status.pop_back(); // delete the line break
-
-        // Don't wait if there is an error or the job is ended
-        if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
-        {
-            std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
-            return false;
-        }
-        // std::cout<<"Job status: "<<job_status<<std::endl;
-        sleep(1);
-    } while (job_status != state);
-
-    return true;
-}
 
 /*
     // check whether the server starts successfully and return the url of server
@@ -111,26 +134,6 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
     }
 */
 
-// run and get the result of command
-std::string getCommandOutput(const std::string command)
-{
-    FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
-    if (!pipe)
-    {
-        std::cerr << "Failed to execute the command: " + command << std::endl;
-        return "";
-    }
-
-    char buffer[128];
-    std::string output;
-    while (fgets(buffer, 128, pipe))
-    {
-        output += buffer;
-    }
-    pclose(pipe);
-
-    return output;
-}
 
 class SingleSlurmJob
 {
@@ -160,7 +163,7 @@ public:
     ~SingleSlurmJob()
     {
         // Cancel the SLURM job
-        getCommandOutput("scancel " + job_id);
+        std::system(("scancel " + job_id).c_str());
 
         // Delete the url text file
         std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
