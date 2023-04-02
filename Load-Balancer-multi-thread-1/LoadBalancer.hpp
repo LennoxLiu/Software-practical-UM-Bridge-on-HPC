@@ -33,20 +33,20 @@ std::string getCommandOutput(const std::string command)
 // state = ["PENDING","RUNNING","COMPLETED","FAILED","CANCELLED"]
 bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
 {
-    std::string command;
-    command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
+    const std::string command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
     // std::cout << "Checking runtime: " << command << std::endl;
     std::string job_status;
 
     do
     {
-        std::thread cmd_thread([&command, &job_status](){ job_status = getCommandOutput(command); });
+        std::thread cmd_thread([&command, &job_status]()
+                               { job_status = getCommandOutput(command); });
         cmd_thread.join();
         // job_status = getCommandOutput(command);
-        
+
         // Delete the line break
         if (!job_status.empty())
-            job_status.pop_back(); 
+            job_status.pop_back();
 
         // Don't wait if there is an error or the job is ended
         if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
@@ -68,7 +68,7 @@ bool waitForFile(const std::string &filename, int time_out = 20)
     auto timeout = std::chrono::seconds(time_out); // wait for maximum 10 seconds
 
     std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
-    std::thread cmd_thread(std::system,command.c_str());
+    std::thread cmd_thread(std::system, command.c_str());
     cmd_thread.join();
     // std::system(command.c_str());
     auto end_time = std::chrono::steady_clock::now();
@@ -92,7 +92,8 @@ std::string submitJob(const std::string &command)
     int i = 0;
     do
     {
-        std::thread cmd_thread([&sbatch_command, &job_id](){ job_id = getCommandOutput(sbatch_command); });
+        std::thread cmd_thread([&sbatch_command, &job_id]()
+                               { job_id = getCommandOutput(sbatch_command); });
         cmd_thread.join();
         // job_id = getCommandOutput(sbatch_command);
 
