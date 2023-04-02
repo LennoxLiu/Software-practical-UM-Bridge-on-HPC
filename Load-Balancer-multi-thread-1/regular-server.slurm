@@ -30,5 +30,5 @@ export PORT=$port
 mkdir -p ./urls
 echo "http://$(hostname):$port" > ./urls/url-$SLURM_JOB_ID.txt # send the url to load-balancer
 
-$server_file $(hostname)
+$server_file
 

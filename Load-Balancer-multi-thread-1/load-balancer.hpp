@@ -131,33 +131,11 @@ std::string readUrl(const std::string &filename)
     return url;
 }
 
-/*
-    // check whether the server starts successfully and return the url of server
-    std::string checkAndGetURL(const std::string &input)
-    {
-        std::regex server_regex("Hosting server at: (http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
-        std::smatch match;
-        std::smatch match_url;
-        std::regex url_regex("(http|https)://[a-zA-Z0-9]+(\\.[a-zA-Z0-9]+)*:[0-9]+");
-        std::stringstream ss;
-        if (std::regex_search(input, match, server_regex)) // check if the server starts
-        {
-            ss << match[0];
-            std::string input2 = ss.str();
-            if (std::regex_search(input2, match_url, url_regex))
-            {
-                // std::cout << "Found URL: " << match_url[0] << std::endl;
-                return match_url[0];
-            }
-        }
-        return "";
-    }
-*/
 
 class SingleSlurmJob
 {
 public:
-    SingleSlurmJob()
+    SingleSlurmJob(std::string model_name = "forward")
     {
         // start a SLURM job for single request
         job_id = submitJob("sbatch regular-server.slurm");
@@ -174,9 +152,10 @@ public:
         {
             std::cout << "  " << model << std::endl;
         }
+        std::cout<< "Using model: "<< model_name <<std::endl;
 
         // Start a client, using unique pointer
-        client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, models[0]); // use the first model avaliable on server by default
+        client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, model_name); // use the first model avaliable on server by default
     }
 
     ~SingleSlurmJob()
@@ -197,18 +176,21 @@ private:
 class LoadBalancer : public umbridge::Model
 {
 public:
-    LoadBalancer() : umbridge::Model("slurm_LB") {}
+    LoadBalancer(std::string name = "forward") : umbridge::Model(name) {
+        // May start a "SingleSlurmJob slurm_job;" here,
+        // and keep slurm_job as private member.
+    }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
         // get size from the dummy server, can only make sense after starting a server
-        SingleSlurmJob slurm_job; // start a new SLURM job;
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->GetInputSizes(config_json);
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        SingleSlurmJob slurm_job; // start a new SLURM job;
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->GetOutputSizes(config_json);
     }
 
@@ -216,7 +198,7 @@ public:
     {
         std::cout << "Request received in Load Balancer." << std::endl;
 
-        SingleSlurmJob slurm_job; // start a new SLURM job
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job
 
         // Pass the arguments and get the output
         std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config);
@@ -226,7 +208,7 @@ public:
 
     bool SupportsEvaluate() override
     {
-        SingleSlurmJob slurm_job; // start a new SLURM job;
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->SupportsEvaluate();
     }
 

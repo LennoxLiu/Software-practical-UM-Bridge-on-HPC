@@ -11,8 +11,8 @@
 class ExampleModel : public umbridge::Model
 {
 public:
-    ExampleModel(int test_delay)
-        : umbridge::Model("forward"),
+    ExampleModel(int test_delay, std::string name = "forward")
+        : umbridge::Model(name),
           test_delay(test_delay)
     {
     }
@@ -94,7 +94,9 @@ int main(int argc, char *argv[])
 
     // Set up and serve model
     ExampleModel model(test_delay);
-    
+    ExampleModel model2(test_delay, "backward");
+    ExampleModel model3(test_delay, "inward");
+    ExampleModel model4(test_delay, "outward");
     
     std::string hostname = "0.0.0.0";
     /*
@@ -112,7 +114,7 @@ int main(int argc, char *argv[])
     */
     std::cout << "Hosting server at : "
               << "http://" << hostname << ":" << port << std::endl;
-    umbridge::serveModels({&model}, hostname, port); // start server at the hostname
+    umbridge::serveModels({&model,&model2,&model3,&model4}, hostname, port); // start server at the hostname
 
     return 0;
 }
