@@ -34,7 +34,7 @@ std::string getCommandOutput(const std::string command)
 bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
 {
     const std::string command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-    // std::cout << "Checking runtime: " << command << std::endl;
+    std::cout << "Checking runtime: " << command << std::endl;
     std::string job_status;
 
     do
