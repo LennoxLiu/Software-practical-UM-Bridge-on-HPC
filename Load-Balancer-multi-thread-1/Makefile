@@ -14,7 +14,6 @@ build-server:
 	- make build-regular-server
 
 run-server: load-balancer.o
-	- echo 'scancel -u hd_lo305'
 	- mkdir -p ./urls
 	- mkdir -p ./sub-jobs
 
