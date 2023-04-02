@@ -516,8 +516,7 @@ namespace umbridge
   {
 
     httplib::Server svr;
-    if (disable_parallel)
-      std::mutex model_mutex; // Ensure the underlying model is only called sequentially
+    std::mutex model_mutex; // Ensure the underlying model is only called sequentially
 
     svr.Post("/Evaluate", [&](const httplib::Request &req, httplib::Response &res)
              {
