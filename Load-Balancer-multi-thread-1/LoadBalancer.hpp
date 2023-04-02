@@ -66,7 +66,9 @@ bool waitForFile(const std::string &filename, int time_out = 20)
     auto timeout = std::chrono::seconds(time_out); // wait for maximum 10 seconds
 
     std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
-    std::system(command.c_str());
+    std::thread cmd_thread(std::system,command.c_str());
+    cmd_thread.join();
+    // std::system(command.c_str());
     auto end_time = std::chrono::steady_clock::now();
 
     if (end_time - start_time > timeout)
@@ -164,10 +166,14 @@ public:
     ~SingleSlurmJob()
     {
         // Cancel the SLURM job
-        std::system(("scancel " + job_id).c_str());
+        std::thread cmd_thread(std::system, ("scancel " + job_id).c_str());
+        cmd_thread.join();
+        // std::system(("scancel " + job_id).c_str());
 
         // Delete the url text file
-        std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
+        std::thread cmd_thread(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
+        cmd_thread.join();
+        // std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
