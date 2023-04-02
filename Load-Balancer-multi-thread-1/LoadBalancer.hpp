@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
+#include <thread>
 #include "../lib/umbridge.h"
 
 // run and get the result of command
@@ -39,7 +40,9 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
 
     do
     {
-        job_status = getCommandOutput(command);
+        std::thread cmd_thread([&command, &job_status](){ job_status = getCommandOutput(command); });
+        cmd_thread.join();
+        // job_status = getCommandOutput(command);
         if (!job_status.empty())
             job_status.pop_back(); // delete the line break
 
