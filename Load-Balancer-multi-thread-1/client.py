@@ -9,7 +9,7 @@ def evaluate_model(model_name):
     input_sizes = model.get_input_sizes()
     output_sizes = model.get_output_sizes()
     config = {}
-    result = model([[1.01],], config)
+    result = model([[1.01,0,65536.65536/2],], config)
     return model_name, input_sizes, output_sizes, result
 
 
