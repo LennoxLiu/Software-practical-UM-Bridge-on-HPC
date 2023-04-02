@@ -43,8 +43,10 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
         std::thread cmd_thread([&command, &job_status](){ job_status = getCommandOutput(command); });
         cmd_thread.join();
         // job_status = getCommandOutput(command);
+        
+        // Delete the line break
         if (!job_status.empty())
-            job_status.pop_back(); // delete the line break
+            job_status.pop_back(); 
 
         // Don't wait if there is an error or the job is ended
         if (job_status == "" || (state != "COMPLETE" && job_status == "COMPLETED") || job_status == "FAILED" || job_status == "CANCELLED")
@@ -90,7 +92,9 @@ std::string submitJob(const std::string &command)
     int i = 0;
     do
     {
-        job_id = getCommandOutput(sbatch_command);
+        std::thread cmd_thread([&command, &job_id](){ job_id = getCommandOutput(command); });
+        cmd_thread.join();
+        // job_id = getCommandOutput(sbatch_command);
 
         // Delete the line break
         if (!job_id.empty())
