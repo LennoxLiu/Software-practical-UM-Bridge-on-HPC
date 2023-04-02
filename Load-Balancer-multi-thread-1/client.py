@@ -42,6 +42,8 @@ url = "http://"+host+":"+str(port)
 print("Connecting to server at:", url)
 print("supported_models:", umbridge.supported_models(url))
 
+print(evaluate_model("forward"))
+
 model_names = ["forward", "backward", "inward", "outward"]
 # Test models in parallel
 with concurrent.futures.ThreadPoolExecutor() as executor:
