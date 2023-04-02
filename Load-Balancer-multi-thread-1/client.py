@@ -4,16 +4,13 @@ import os
 import sys
 import concurrent.futures
 
-def test_model(model_name):
+def evaluate_model(model_name):
     model = umbridge.HTTPModel(url, model_name)
-    model.get
-
-    print("input_sizes:", model.get_input_sizes())
-    print("output_sizes:", model.get_output_sizes())
-
+    input_sizes = model.get_input_sizes()
+    output_sizes = model.get_output_sizes()
     config = {}
-
-    print("evaluation:", model([[1.01],], config))
+    result = model([[1.01],], config)
+    return model_name, input_sizes, output_sizes, result
 
 
 print("Client start.")
@@ -46,5 +43,12 @@ print("Connecting to server at:", url)
 print("supported_models:", umbridge.supported_models(url))
 
 model_names = ["forward", "backward", "inward", "outward"]
+# Test models in parallel
 with concurrent.futures.ThreadPoolExecutor() as executor:
-    results = executor.map(test_model, model_names)
+    results = executor.map(evaluate_model, model_names)
+
+for model_name, input_sizes, output_sizes, result in results:
+    print(f"Model {model_name}:")
+    print(f"  Input sizes: {input_sizes}")
+    print(f"  Output sizes: {output_sizes}")
+    print(f"  Result: {result}")
