@@ -33,14 +33,13 @@ url = "http://"+host+":"+str(port)
 print("Connecting to server at:", url)
 
 
-print(umbridge.supported_models(url))
-for model_name in ["forward","backward","inward","outward"]:
+print("supported_models:", umbridge.supported_models(url))
+for model_name in ["forward", "backward", "inward", "outward"]:
     model = umbridge.HTTPModel(url, model_name)
 
-    print(model.get_input_sizes())
-    print(model.get_output_sizes())
+    print("input_sizes:", model.get_input_sizes())
+    print("output_sizes:", model.get_output_sizes())
 
     config = {}
 
-    print(model([[1.01],], config))
-
+    print("evaluation:", model([[1.01],], config))

@@ -91,9 +91,10 @@ std::string submitJob(const std::string &command)
         if (!job_id.empty())
             job_id.pop_back();
 
+        std::cout << "job_id: " << job_id << std::endl;
         ++i;
 
-    } while (waitForJobState(job_id, "RUNNING") == false && i < 3 && waitForFile("./urls/url-" + job_id + ".txt", 20) == false);
+    } while (waitForJobState(job_id, "RUNNING") == false && waitForFile("./urls/url-" + job_id + ".txt", 20) == false && i < 3);
     // Wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
     // Also wait until job is running and url file is written
     // Try maximum 3 times
@@ -131,7 +132,6 @@ std::string readUrl(const std::string &filename)
     return url;
 }
 
-
 class SingleSlurmJob
 {
 public:
@@ -152,7 +152,7 @@ public:
         {
             std::cout << "  " << model << std::endl;
         }
-        std::cout<< "Using model: "<< model_name <<std::endl;
+        std::cout << "Using model: " << model_name << std::endl;
 
         // Start a client, using unique pointer
         client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, model_name); // use the first model avaliable on server by default
@@ -176,7 +176,8 @@ private:
 class LoadBalancer : public umbridge::Model
 {
 public:
-    LoadBalancer(std::string name = "forward") : umbridge::Model(name) {
+    LoadBalancer(std::string name = "forward") : umbridge::Model(name)
+    {
         // May start a "SingleSlurmJob slurm_job;" here,
         // and keep slurm_job as private member.
     }
