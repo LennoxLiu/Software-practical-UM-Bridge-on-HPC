@@ -69,9 +69,9 @@ bool waitForFile(const std::string &filename, int time_out = 20)
 
     const std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
     // std::cout << "Waiting for file: " << command << std::endl;
-    std::thread cmd_thread(std::system, command.c_str());
-    cmd_thread.join();
-    // std::system(command.c_str());
+    // std::thread cmd_thread(std::system, command.c_str());
+    // cmd_thread.join();
+    std::system(command.c_str());
     auto end_time = std::chrono::steady_clock::now();
 
     if (end_time - start_time > timeout)
@@ -181,6 +181,9 @@ public:
 
         // cmd_thread1.join();
         // cmd_thread2.join();
+
+        // I don' know why using std::thread to call std::system would cause an error,
+        // while calling it directly would not.
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
