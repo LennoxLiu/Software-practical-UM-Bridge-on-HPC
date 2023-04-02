@@ -166,14 +166,15 @@ public:
     ~SingleSlurmJob()
     {
         // Cancel the SLURM job
-        std::thread cmd_thread(std::system, ("scancel " + job_id).c_str());
-        cmd_thread.join();
+        std::thread cmd_thread1(std::system, ("scancel " + job_id).c_str());
         // std::system(("scancel " + job_id).c_str());
 
         // Delete the url text file
-        std::thread cmd_thread(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
-        cmd_thread.join();
+        std::thread cmd_thread2(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
         // std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
+
+        cmd_thread1.join();
+        cmd_thread2.join();
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
