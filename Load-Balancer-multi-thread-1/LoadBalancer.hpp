@@ -92,7 +92,7 @@ std::string submitJob(const std::string &command)
     int i = 0;
     do
     {
-        std::thread cmd_thread([&command, &job_id](){ job_id = getCommandOutput(command); });
+        std::thread cmd_thread([&sbatch_command, &job_id](){ job_id = getCommandOutput(sbatch_command); });
         cmd_thread.join();
         // job_id = getCommandOutput(sbatch_command);
 
