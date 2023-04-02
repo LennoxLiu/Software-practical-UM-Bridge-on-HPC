@@ -65,5 +65,5 @@ int main(int argc, char *argv[])
                    [](LoadBalancer& obj) { return &obj; });
 
     std::cout << "Hosting server at: http://" << hostname << ":" << port << std::endl;
-    umbridge::serveModels(LB_ptr_vector, hostname, port);
+    umbridge::serveModels(LB_ptr_vector, hostname, port, false);
 }
