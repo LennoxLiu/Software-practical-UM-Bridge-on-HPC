@@ -2,6 +2,18 @@ import umbridge
 import subprocess
 import os
 import sys
+import concurrent.futures
+
+def test_model(model_name):
+    model = umbridge.HTTPModel(url, model_name)
+    model.get
+
+    print("input_sizes:", model.get_input_sizes())
+    print("output_sizes:", model.get_output_sizes())
+
+    config = {}
+
+    print("evaluation:", model([[1.01],], config))
 
 
 print("Client start.")
@@ -31,15 +43,8 @@ else:
     host = output.decode()[:-1]
 url = "http://"+host+":"+str(port)
 print("Connecting to server at:", url)
-
-
 print("supported_models:", umbridge.supported_models(url))
-for model_name in ["forward", "backward", "inward", "outward"]:
-    model = umbridge.HTTPModel(url, model_name)
 
-    print("input_sizes:", model.get_input_sizes())
-    print("output_sizes:", model.get_output_sizes())
-
-    config = {}
-
-    print("evaluation:", model([[1.01],], config))
+model_names = ["forward", "backward", "inward", "outward"]
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    results = executor.map(test_model, model_names)

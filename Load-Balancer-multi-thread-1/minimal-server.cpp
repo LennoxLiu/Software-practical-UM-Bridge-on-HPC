@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
 
     // Set up and serve model
     ExampleModel model(test_delay);
-    ExampleModel model2(test_delay, "backward");
-    ExampleModel model3(test_delay, "inward");
-    ExampleModel model4(test_delay, "outward");
+    ExampleModel model2(15, "backward");
+    ExampleModel model3(10, "inward");
+    ExampleModel model4(5, "outward");
     
     std::string hostname = "0.0.0.0";
     /*
