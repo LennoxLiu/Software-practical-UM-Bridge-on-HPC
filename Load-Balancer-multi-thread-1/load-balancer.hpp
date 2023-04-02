@@ -94,7 +94,7 @@ std::string submitJob(const std::string &command)
         std::cout << "job_id: " << job_id << std::endl;
         ++i;
 
-    } while (waitForJobState(job_id, "RUNNING") == false && waitForFile("./urls/url-" + job_id + ".txt", 20) == false && i < 3);
+    } while (waitForJobState(job_id, "RUNNING") == false && i < 3 && waitForFile("./urls/url-" + job_id + ".txt", 20) == false);
     // Wait to start all nodes on the cluster, call scontrol for every 1 sceond to check
     // Also wait until job is running and url file is written
     // Try maximum 3 times

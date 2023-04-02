@@ -35,6 +35,5 @@ helix-build:
 	- make build-server
 
 helix-update:
-	- git config --global credential.helper 'cache --timeout=86400'
 	- git reset --hard
 	- git pull
