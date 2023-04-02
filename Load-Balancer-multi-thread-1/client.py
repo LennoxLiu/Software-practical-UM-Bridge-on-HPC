@@ -34,14 +34,13 @@ print("Connecting to server at:", url)
 
 
 print(umbridge.supported_models(url))
-model = umbridge.HTTPModel(url, "slurm_LB")
+for model_name in ["forward","backward","inward","outward"]:
+    model = umbridge.HTTPModel(url, model_name)
 
-print(model.get_input_sizes())
-print(model.get_output_sizes())
+    print(model.get_input_sizes())
+    print(model.get_output_sizes())
 
-config = {}
+    config = {}
 
-print(model([[1.01],], config))
+    print(model([[1.01],], config))
 
-for i in range(100, 104):
-    print(model([[i+0.001*i],], config))
