@@ -54,7 +54,7 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
             std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
             return false;
         }
-        // std::cout<<"Job status: "<<job_status<<std::endl;
+        std::cout<<"Job status: "<<job_status<<std::endl;
         sleep(1);
     } while (job_status != state);
 
@@ -67,7 +67,8 @@ bool waitForFile(const std::string &filename, int time_out = 20)
     auto start_time = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(time_out); // wait for maximum 10 seconds
 
-    std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
+    const std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
+    std::cout << "Waiting for file: " << command << std::endl;
     std::thread cmd_thread(std::system, command.c_str());
     cmd_thread.join();
     // std::system(command.c_str());
