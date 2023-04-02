@@ -1,5 +1,15 @@
 # README
 
+## Changes for this version
+
+- Used `std::thread` to wrap all `popen` calls and leaf `std::system` as before. `LoadBalancer` can now take concurrent requests.
+>I'm not sure if std::system or popen is thread safe, but popen will cause errors in multithread.
+>There might be some bugs about the concurrency.
+
+- Now support multiple models on regular server.
+
+- `umbridge::serveModels()` in `umbridge.h` is changed for concurrency.
+
 ## How to start server on Helix
 
 1. Load module to compile `cpp` files: `module load compiler/gnu`
