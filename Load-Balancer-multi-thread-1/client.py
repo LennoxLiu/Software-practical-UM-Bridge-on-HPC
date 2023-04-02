@@ -4,12 +4,13 @@ import os
 import sys
 import concurrent.futures
 
+
 def evaluate_model(model_name):
     model = umbridge.HTTPModel(url, model_name)
     input_sizes = model.get_input_sizes()
     output_sizes = model.get_output_sizes()
     config = {}
-    result = model([[1.01,0,65536.65536/2],], config)
+    result = model([[1.01, 0, 65536.65536/2],], config)
     return model_name, input_sizes, output_sizes, result
 
 
@@ -53,4 +54,4 @@ for model_name, input_sizes, output_sizes, result in results:
     print(f"Model {model_name}:")
     print(f"  Input sizes: {input_sizes}")
     print(f"  Output sizes: {output_sizes}")
-    print(f"  Result: {result}")
+    print("  Result:", result)
