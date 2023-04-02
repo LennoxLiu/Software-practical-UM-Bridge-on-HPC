@@ -34,7 +34,7 @@ std::string getCommandOutput(const std::string command)
 bool waitForJobState(const std::string &job_id, const std::string &state = "COMPLETED")
 {
     const std::string command = "scontrol show job " + job_id + " | grep -oP '(?<=JobState=)[^ ]+'";
-    std::cout << "Checking runtime: " << command << std::endl;
+    // std::cout << "Checking runtime: " << command << std::endl;
     std::string job_status;
 
     do
@@ -54,7 +54,7 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
             std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
             return false;
         }
-        std::cout<<"Job status: "<<job_status<<std::endl;
+        // std::cout<<"Job status: "<<job_status<<std::endl;
         sleep(1);
     } while (job_status != state);
 
@@ -68,7 +68,7 @@ bool waitForFile(const std::string &filename, int time_out = 20)
     auto timeout = std::chrono::seconds(time_out); // wait for maximum 10 seconds
 
     const std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
-    std::cout << "Waiting for file: " << command << std::endl;
+    // std::cout << "Waiting for file: " << command << std::endl;
     std::thread cmd_thread(std::system, command.c_str());
     cmd_thread.join();
     // std::system(command.c_str());
@@ -172,15 +172,15 @@ public:
     ~SingleSlurmJob()
     {
         // Cancel the SLURM job
-        std::thread cmd_thread1(std::system, ("scancel " + job_id).c_str());
-        // std::system(("scancel " + job_id).c_str());
+        // std::thread cmd_thread1(std::system, ("scancel " + job_id).c_str());
+        std::system(("scancel " + job_id).c_str());
 
         // Delete the url text file
-        std::thread cmd_thread2(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
-        // std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
+        // std::thread cmd_thread2(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
+        std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
 
-        cmd_thread1.join();
-        cmd_thread2.join();
+        // cmd_thread1.join();
+        // cmd_thread2.join();
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
