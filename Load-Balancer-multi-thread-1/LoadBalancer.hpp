@@ -93,10 +93,10 @@ std::string submitJob(const std::string &command)
     int i = 0;
     do
     {
-        std::thread cmd_thread([&sbatch_command, &job_id]()
-                               { job_id = getCommandOutput(sbatch_command); });
-        cmd_thread.join();
-        // job_id = getCommandOutput(sbatch_command);
+        // std::thread cmd_thread([&sbatch_command, &job_id]()
+        //                        { job_id = getCommandOutput(sbatch_command); });
+        // cmd_thread.join();
+        job_id = getCommandOutput(sbatch_command);
 
         // Delete the line break
         if (!job_id.empty())
