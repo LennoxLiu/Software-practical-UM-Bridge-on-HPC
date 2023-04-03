@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
-#include <thread>
 #include "../lib/umbridge.h"
 
 // run and get the result of command
@@ -39,10 +38,7 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
 
     do
     {
-        // std::thread cmd_thread([&command, &job_status]()
-        //                        { job_status = getCommandOutput(command); });
-        // cmd_thread.join();
-        job_status = getCommandOutput(command); // last test
+        job_status = getCommandOutput(command);
 
         // Delete the line break
         if (!job_status.empty())
@@ -69,8 +65,6 @@ bool waitForFile(const std::string &filename, int time_out = 20)
 
     const std::string command = "while [ ! -f " + filename + " ]; do sleep 0.1; done";
     // std::cout << "Waiting for file: " << command << std::endl;
-    // std::thread cmd_thread(std::system, command.c_str());
-    // cmd_thread.join();
     std::system(command.c_str());
     auto end_time = std::chrono::steady_clock::now();
 
@@ -93,9 +87,6 @@ std::string submitJob(const std::string &command)
     int i = 0;
     do
     {
-        // std::thread cmd_thread([&sbatch_command, &job_id]()
-        //                        { job_id = getCommandOutput(sbatch_command); });
-        // cmd_thread.join();
         job_id = getCommandOutput(sbatch_command);
 
         // Delete the line break
@@ -172,18 +163,10 @@ public:
     ~SingleSlurmJob()
     {
         // Cancel the SLURM job
-        // std::thread cmd_thread1(std::system, ("scancel " + job_id).c_str());
         std::system(("scancel " + job_id).c_str());
 
         // Delete the url text file
-        // std::thread cmd_thread2(std::system, ("rm ./urls/url-" + job_id + ".txt").c_str());
         std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
-
-        // cmd_thread1.join();
-        // cmd_thread2.join();
-
-        // I don' know why using std::thread to call std::system would cause an error,
-        // while calling it directly would not.
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
