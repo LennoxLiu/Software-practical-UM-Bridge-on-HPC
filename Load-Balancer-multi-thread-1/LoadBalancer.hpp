@@ -39,10 +39,10 @@ bool waitForJobState(const std::string &job_id, const std::string &state = "COMP
 
     do
     {
-        std::thread cmd_thread([&command, &job_status]()
-                               { job_status = getCommandOutput(command); });
-        cmd_thread.join();
-        // job_status = getCommandOutput(command);
+        // std::thread cmd_thread([&command, &job_status]()
+        //                        { job_status = getCommandOutput(command); });
+        // cmd_thread.join();
+        job_status = getCommandOutput(command); // last test
 
         // Delete the line break
         if (!job_status.empty())
