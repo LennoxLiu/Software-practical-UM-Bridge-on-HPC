@@ -1,30 +1,30 @@
 all: clear-server build-server run-server
 
 regular-server-obj =  ./minimal-server.cpp
-slurm-server-obj = test-LoadBalancer.cpp LoadBalancer.hpp ../lib/httplib.h ../lib/json.hpp ../lib/umbridge.h
+slurm-server-obj = test-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
 
 build-load-balancer:
-	- g++ -O3 -Wno-unused-result -std=c++14 $(slurm-server-obj) -o load-balancer.o -lssl -lcrypto -pthread
+	- g++ -O3 -Wno-unused-result -std=c++14 $(slurm-server-obj) -o load-balancer -lssl -lcrypto -pthread
 
 build-regular-server:
-	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server.o -lssl -lcrypto -pthread
+	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server -lssl -lcrypto -pthread
 
 build-server:
 	- make build-load-balancer
 	- make build-regular-server
 
-run-server: load-balancer.o
+run-server: load-balancer
 	- mkdir -p ./urls
 	- mkdir -p ./sub-jobs
 
-	- ./load-balancer.o
+	- ./load-balancer
 
 run-client: client.py
 	- python3 ./client.py
 
 clear-server:
-	- rm ./load-balancer.o
-	- rm ./server.o
+	- rm ./load-balancer
+	- rm ./server
 
 helix-make: helix-build
 	- make run-server

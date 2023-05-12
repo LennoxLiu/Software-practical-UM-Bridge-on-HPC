@@ -1,0 +1,4 @@
+- Sometimes the sub-jobs completed before the excution and the SLURM log is: 
+State: PENDING
+Cores: 1
+Efficiency not available for jobs in the PENDING state.

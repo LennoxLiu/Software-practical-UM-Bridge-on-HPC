@@ -6,7 +6,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
-#include "../lib/umbridge.h"
+#include "lib/umbridge.h"
 
 // run and get the result of command
 std::string getCommandOutput(const std::string command)
@@ -184,35 +184,82 @@ public:
         // and keep slurm_job as private member.
     }
 
-    std::vector<std::size_t> GetInputSizes(const json &config_json) const override
+    std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
         // get size from the dummy server, can only make sense after starting a server
         SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->GetInputSizes(config_json);
     }
 
-    std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
+    std::vector<std::size_t> GetOutputSizes(const json &config_json = json::parse("{}")) const override
     {
         SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->GetOutputSizes(config_json);
     }
 
-    std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
+    std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config_json = json::parse("{}")) override
     {
         std::cout << "Request received in Load Balancer." << std::endl;
 
         SingleSlurmJob slurm_job(Model::name); // start a new SLURM job
 
         // Pass the arguments and get the output
-        std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config);
+        std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config_json);
 
         return outputs; // return output as vector
+    }
+
+    std::vector<double> Gradient(unsigned int outWrt,
+                                 unsigned int inWrt,
+                                 const std::vector<std::vector<double>> &inputs,
+                                 const std::vector<double> &sens,
+                                 json config_json = json::parse("{}")) override
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
+    }
+
+    std::vector<double> ApplyJacobian(unsigned int outWrt,
+                                      unsigned int inWrt,
+                                      const std::vector<std::vector<double>> &inputs,
+                                      const std::vector<double> &vec,
+                                      json config_json = json::parse("{}")) override
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
+    }
+
+    std::vector<double> ApplyHessian(unsigned int outWrt,
+                                     unsigned int inWrt1,
+                                     unsigned int inWrt2,
+                                     const std::vector<std::vector<double>> &inputs,
+                                     const std::vector<double> &sens,
+                                     const std::vector<double> &vec,
+                                     json config_json = json::parse("{}"))
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
     }
 
     bool SupportsEvaluate() override
     {
         SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
         return slurm_job.client_ptr->SupportsEvaluate();
+    }
+    bool SupportsGradient() override
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->SupportsGradient();
+    }
+    bool SupportsApplyJacobian() override
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->SupportsApplyJacobian();
+    }
+    bool SupportsApplyHessian() override
+    {
+        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
+        return slurm_job.client_ptr->SupportsApplyHessian();
     }
 
 private:
