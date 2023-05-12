@@ -1,2 +1,0 @@
-Hosting server at: http://localhost
-

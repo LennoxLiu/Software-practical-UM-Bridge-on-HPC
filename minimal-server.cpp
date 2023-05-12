@@ -2,19 +2,17 @@
 #include <string>
 #include <chrono>
 #include <thread>
-#include "solver.hh"
 
 // Needed for HTTPS, implies the need for openssl, may be omitted if HTTP suffices
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 
-#include "umbridge.h"
-#define N 10
+#include "lib/umbridge.h"
 
 class ExampleModel : public umbridge::Model
 {
 public:
-    ExampleModel(int test_delay)
-        : umbridge::Model("get_eigenvector_eigenvalue"),
+    ExampleModel(int test_delay, std::string name = "forward")
+        : umbridge::Model(name),
           test_delay(test_delay)
     {
     }
@@ -22,42 +20,21 @@ public:
     // Define input and output dimensions of model (here we have a single vector of length 1 for input; same for output)
     std::vector<std::size_t> GetInputSizes(const json &config_json) const override
     {
-        // int N = config_json["N"];
-        return {N*N};
+        return {1};
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        return {N, 1};
+        return {1};
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
         // Do the actual model evaluation; here we just multiply the first entry of the first input vector by two, and store the result in the output.
         // In addition, we support an artificial delay here, simulating actual work being done.
+        std::this_thread::sleep_for(std::chrono::milliseconds(test_delay));
 
-        
-        const std::vector<double> &data = inputs[0];
-        std::vector<std::vector<double>> entries;
-        std::vector<double> temp_vec;
-
-        // int N = config["N"];
-        // Divide N*N vector into N vectors with size N
-        for (auto it = data.begin(); it != data.end(); it += N)
-        {
-            temp_vec.assign(it, it + N);
-            entries.push_back(temp_vec);
-        }
-        Matrix A(entries);
-
-        std::vector<double> eigenvector = get_eigenvector(A, config["steps"]); 
-        std::vector<std::vector<double>> result;
-        result.push_back(eigenvector);
-
-        std::vector<double> eigenvalue = {get_eigenvalue(A,eigenvector)};
-        result.push_back(eigenvalue);
-
-        return result;
+        return {{inputs[0][0] * 2.0}};
     }
 
     // Specify that our model supports evaluation. Jacobian support etc. may be indicated similarly.
@@ -70,7 +47,28 @@ private:
     int test_delay;
 };
 
-int main()
+// run and get the result of command
+std::string getCommandOutput(const std::string command)
+{
+    FILE *pipe = popen(command.c_str(), "r"); // execute the command and return the output as stream
+    if (!pipe)
+    {
+        std::cerr << "Failed to execute the command: " + command << std::endl;
+        return "";
+    }
+
+    char buffer[128];
+    std::string output;
+    while (fgets(buffer, 128, pipe))
+    {
+        output += buffer;
+    }
+    pclose(pipe);
+
+    return output;
+}
+
+int main(int argc, char *argv[])
 {
 
     // Read environment variables for configuration
@@ -96,7 +94,27 @@ int main()
 
     // Set up and serve model
     ExampleModel model(test_delay);
-    umbridge::serveModels({&model}, "localhost", port);
+    ExampleModel model2(15, "backward");
+    ExampleModel model3(10, "inward");
+    ExampleModel model4(5, "outward");
+    
+    std::string hostname = "0.0.0.0";
+    /*
+    if (argc == 2)
+    {
+        hostname = argv[1];
+    }
+    else
+    {
+        hostname = getCommandOutput("hostname"); // get the hostname of node
+        // delete the line break
+        if (!hostname.empty())
+            hostname.pop_back();
+    }
+    */
+    std::cout << "Hosting server at : "
+              << "http://" << hostname << ":" << port << std::endl;
+    umbridge::serveModels({&model,&model2,&model3,&model4}, hostname, port); // start server at the hostname
 
     return 0;
 }
