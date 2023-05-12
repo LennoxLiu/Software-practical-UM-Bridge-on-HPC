@@ -5,7 +5,7 @@
 #SBATCH --mem=1gb
 #SBATCH --output=./sub-jobs/%j.out
 
-server_file="./server"
+server_file="./server.o"
 
 function get_avaliable_port {
     # Define the range of ports to select from
