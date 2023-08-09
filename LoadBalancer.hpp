@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
+#include <mutex>
 #include "lib/umbridge.h"
 
 // run and get the result of command
@@ -171,6 +172,8 @@ public:
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
 
+    bool idle = true;
+
 private:
     std::string job_id;
 };
@@ -178,33 +181,38 @@ private:
 class LoadBalancer : public umbridge::Model
 {
 public:
-    LoadBalancer(std::string name = "forward") : umbridge::Model(name)
+    LoadBalancer(std::string name = "forward") : umbridge::Model(name)  
     {
-        // May start a "SingleSlurmJob slurm_job;" here,
-        // and keep slurm_job as private member.
+        // Start a single slurm job by default. This could be made configurable if desired.
+        slurm_jobs.push_back(std::make_unique<SingleSlurmJob>(name));
     }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
         // get size from the dummy server, can only make sense after starting a server
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->GetInputSizes(config_json);
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->GetInputSizes(config_json);
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json = json::parse("{}")) const override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->GetOutputSizes(config_json);
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->GetOutputSizes(config_json);
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config_json = json::parse("{}")) override
     {
         std::cout << "Request received in Load Balancer." << std::endl;
 
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
 
         // Pass the arguments and get the output
-        std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config_json);
+        std::vector<std::vector<double>> outputs = slurm_job_ptr->client_ptr->Evaluate(inputs, config_json);
+        slurm_job_ptr->idle = true;
 
         return outputs; // return output as vector
     }
@@ -215,8 +223,11 @@ public:
                                  const std::vector<double> &sens,
                                  json config_json = json::parse("{}")) override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
+        slurm_job_ptr->idle = true;
+        return outputs;
+
     }
 
     std::vector<double> ApplyJacobian(unsigned int outWrt,
@@ -225,8 +236,10 @@ public:
                                       const std::vector<double> &vec,
                                       json config_json = json::parse("{}")) override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
 
     std::vector<double> ApplyHessian(unsigned int outWrt,
@@ -237,30 +250,62 @@ public:
                                      const std::vector<double> &vec,
                                      json config_json = json::parse("{}"))
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
 
     bool SupportsEvaluate() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsEvaluate();
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->SupportsEvaluate();
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
     bool SupportsGradient() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsGradient();
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->SupportsGradient();
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
     bool SupportsApplyJacobian() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsApplyJacobian();
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->SupportsApplyJacobian();
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
     bool SupportsApplyHessian() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsApplyHessian();
+        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        auto outputs = slurm_job_ptr->client_ptr->SupportsApplyHessian();
+        slurm_job_ptr->idle = true;
+        return outputs;
     }
 
 private:
+    mutable std::mutex slurm_jobs_mutex;
+    mutable std::vector<std::unique_ptr<SingleSlurmJob>> slurm_jobs;
+    
+    std::unique_ptr<SingleSlurmJob>& getIdleJob() const
+    {
+        std::lock_guard<std::mutex> lock(slurm_jobs_mutex);
+        // Check if there is an idle job using a linear search
+        // this can be improved if necessary for performance.
+        for (auto& job : slurm_jobs) 
+        {
+            if (job->idle) 
+            {
+                job->idle = false;
+                return job;
+            }
+        }
+
+        // Create a new job if no idle jobs available
+        slurm_jobs.push_back(std::make_unique<SingleSlurmJob>(Model::name));
+        slurm_jobs.back()->idle = false;
+        return slurm_jobs.back();
+    }
 };

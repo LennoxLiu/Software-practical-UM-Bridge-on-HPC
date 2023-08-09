@@ -1,17 +1,31 @@
 all: clear-server build-server run-server
 
-regular-server-obj =  ./minimal-server.cpp
+regular-server-obj = ./minimal-server.cpp
+debug-server-obj = test/debug/debug-server.cpp
 slurm-server-obj = test-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
+debug-slurm-server-obj = test/debug/debug-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
+
 
 build-load-balancer:
 	- g++ -O3 -Wno-unused-result -std=c++14 $(slurm-server-obj) -o load-balancer -lssl -lcrypto -pthread
 
+build-debug-load-balancer:
+	- g++ -O3 -Wno-unused-result -std=c++14 $(debug-slurm-server-obj) -o load-balancer -lssl -lcrypto -pthread
+
 build-regular-server:
 	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server -lssl -lcrypto -pthread
+
+build-debug-server:
+	- g++ -O3 -w -std=c++11 $(debug-server-obj) -o server -lssl -lcrypto -pthread
+
 
 build-server:
 	- make build-load-balancer
 	- make build-regular-server
+
+build-debug:
+	- make build-debug-load-balancer
+	- make build-debug-server
 
 run-server: load-balancer
 	- mkdir -p ./urls
