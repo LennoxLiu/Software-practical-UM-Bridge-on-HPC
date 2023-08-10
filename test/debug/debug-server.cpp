@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <chrono>
+#include <ctime>
 #include <thread>
 #include <random>
 
@@ -27,16 +28,23 @@ public:
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        return {1};
+        return {5};
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
-        // Do the actual model evaluation; here we just multiply the first entry of the first input vector by two, and store the result in the output.
-        // In addition, we support an artificial delay here, simulating actual work being done.
+        auto start = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        //std::cout << "Model (" << id << ") received request at " << std::ctime(&start) << std::endl;
+        
+        // Use an artificial delay to simulate actual work being done
         std::this_thread::sleep_for(std::chrono::milliseconds(test_delay));
 
-        return {{(double) id}};
+        auto end = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        auto duration = std::difftime(end, start);
+        //std::cout << "Model (" << id << ") finished request at " << std::ctime(&end) << "(" << std::difftime(end, start) << "s)" << std::endl;
+        // Input is the time at which the request was sent from client
+        std::vector<std::vector<double>> result {{(double) id, inputs[0][0], (double) start, (double) end, duration}};
+        return result;
     }
 
     // Specify that our model supports evaluation. Jacobian support etc. may be indicated similarly.
@@ -52,7 +60,7 @@ private:
     int generateID() {
         std::random_device dev;
         std::mt19937 rng(dev());
-        std::uniform_int_distribution<int> dist(0, 100000);
+        std::uniform_int_distribution<int> dist(0, 1000000);
         return dist(rng);
     }
 };

@@ -291,7 +291,7 @@ private:
     
     std::unique_ptr<SingleSlurmJob>& getIdleJob() const
     {
-        std::lock_guard<std::mutex> lock(slurm_jobs_mutex);
+        std::unique_lock<std::mutex> guard(slurm_jobs_mutex);
         // Check if there is an idle job using a linear search
         // this can be improved if necessary for performance.
         for (auto& job : slurm_jobs) 
@@ -304,8 +304,13 @@ private:
         }
 
         // Create a new job if no idle jobs available
-        slurm_jobs.push_back(std::make_unique<SingleSlurmJob>(Model::name));
-        slurm_jobs.back()->idle = false;
+        guard.unlock();
+        auto new_job = std::make_unique<SingleSlurmJob>(Model::name);
+        new_job->idle = false;
+    
+        // Add new job to the list of jobs
+        guard.lock();
+        slurm_jobs.push_back(std::move(new_job));
         return slurm_jobs.back();
     }
 };
