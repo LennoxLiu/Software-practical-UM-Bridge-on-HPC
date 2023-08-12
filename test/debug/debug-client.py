@@ -6,6 +6,7 @@ import concurrent.futures
 import time
 
 def evaluate_model(model_name):
+    request_time = time.time()
     model = umbridge.HTTPModel(url, model_name)
 
     input_sizes = model.get_input_sizes()
@@ -13,7 +14,7 @@ def evaluate_model(model_name):
 
     config = {}
     # Pass request time
-    result = model([[time.time()]], config)
+    result = model([[request_time]], config)
 
     return model_name, input_sizes, output_sizes, result
 

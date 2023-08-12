@@ -163,16 +163,18 @@ public:
 
     ~SingleSlurmJob()
     {
+        std::cout << "Cancelling job..." << std::endl;
         // Cancel the SLURM job
         std::system(("scancel " + job_id).c_str());
 
+        std::cout << "Deleting URL file..." << std::endl;
         // Delete the url text file
         std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
 
-    bool idle = true;
+    mutable std::mutex busy_mutex;
 
 private:
     std::string job_id;
@@ -190,31 +192,28 @@ public:
     std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
         // get size from the dummy server, can only make sense after starting a server
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->GetInputSizes(config_json);
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->GetInputSizes(config_json);
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json = json::parse("{}")) const override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->GetOutputSizes(config_json);
-        slurm_job_ptr->idle = true;
-        return outputs;
+        // get size from the dummy server, can only make sense after starting a server
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->GetOutputSizes(config_json);
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config_json = json::parse("{}")) override
     {
         std::cout << "Request received in Load Balancer." << std::endl;
 
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
 
         // Pass the arguments and get the output
-        std::vector<std::vector<double>> outputs = slurm_job_ptr->client_ptr->Evaluate(inputs, config_json);
-        slurm_job_ptr->idle = true;
-
-        return outputs; // return output as vector
+        return slurm_job_ptr->client_ptr->Evaluate(inputs, config_json);
     }
 
     std::vector<double> Gradient(unsigned int outWrt,
@@ -223,11 +222,9 @@ public:
                                  const std::vector<double> &sens,
                                  json config_json = json::parse("{}")) override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
-        slurm_job_ptr->idle = true;
-        return outputs;
-
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
     }
 
     std::vector<double> ApplyJacobian(unsigned int outWrt,
@@ -236,10 +233,9 @@ public:
                                       const std::vector<double> &vec,
                                       json config_json = json::parse("{}")) override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
     }
 
     std::vector<double> ApplyHessian(unsigned int outWrt,
@@ -250,55 +246,54 @@ public:
                                      const std::vector<double> &vec,
                                      json config_json = json::parse("{}"))
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
     }
 
     bool SupportsEvaluate() override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->SupportsEvaluate();
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->SupportsEvaluate();
     }
+
     bool SupportsGradient() override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->SupportsGradient();
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->SupportsGradient();
     }
+
     bool SupportsApplyJacobian() override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->SupportsApplyJacobian();
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->SupportsApplyJacobian();
     }
+
     bool SupportsApplyHessian() override
     {
-        auto& slurm_job_ptr = getIdleJob(); // Find an idle job or create a new one.
-        auto outputs = slurm_job_ptr->client_ptr->SupportsApplyHessian();
-        slurm_job_ptr->idle = true;
-        return outputs;
+        std::unique_lock<std::mutex> job_lock;
+        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        return slurm_job_ptr->client_ptr->SupportsApplyHessian();
     }
 
 private:
     mutable std::mutex slurm_jobs_mutex;
     mutable std::vector<std::unique_ptr<SingleSlurmJob>> slurm_jobs;
     
-    std::unique_ptr<SingleSlurmJob>& getIdleJob() const
+    std::unique_ptr<SingleSlurmJob>& getIdleJob(std::unique_lock<std::mutex>& job_lock) const
     {
-        std::unique_lock<std::mutex> guard(slurm_jobs_mutex);
+        std::unique_lock<std::mutex> guard(slurm_jobs_mutex); // Consider using a r/w-lock
         // Check if there is an idle job using a linear search
         // this can be improved if necessary for performance.
         for (auto& job : slurm_jobs) 
         {
-            if (job->idle) 
+            std::unique_lock<std::mutex> busy_lock(job->busy_mutex, std::try_to_lock);
+            if (busy_lock) 
             {
-                job->idle = false;
+                busy_lock.swap(job_lock);
                 return job;
             }
         }
@@ -306,11 +301,14 @@ private:
         // Create a new job if no idle jobs available
         guard.unlock();
         auto new_job = std::make_unique<SingleSlurmJob>(Model::name);
-        new_job->idle = false;
+        std::unique_lock<std::mutex> busy_lock(new_job->busy_mutex);
+        busy_lock.swap(job_lock);
     
         // Add new job to the list of jobs
+        // Might be able to make this async?
         guard.lock();
         slurm_jobs.push_back(std::move(new_job));
+
         return slurm_jobs.back();
     }
 };
