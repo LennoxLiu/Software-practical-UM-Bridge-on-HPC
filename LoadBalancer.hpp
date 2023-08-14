@@ -185,15 +185,14 @@ class LoadBalancer : public umbridge::Model
 public:
     LoadBalancer(std::string name = "forward") : umbridge::Model(name)  
     {
-        // Start a single slurm job by default. This could be made configurable if desired.
-        slurm_jobs.push_back(std::make_unique<SingleSlurmJob>(name));
+        // Could optionally start a fixed number of jobs here.
     }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
         // get size from the dummy server, can only make sense after starting a server
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->GetInputSizes(config_json);
     }
 
@@ -201,7 +200,7 @@ public:
     {
         // get size from the dummy server, can only make sense after starting a server
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->GetOutputSizes(config_json);
     }
 
@@ -210,7 +209,7 @@ public:
         std::cout << "Request received in Load Balancer." << std::endl;
 
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
 
         // Pass the arguments and get the output
         return slurm_job_ptr->client_ptr->Evaluate(inputs, config_json);
@@ -223,7 +222,7 @@ public:
                                  json config_json = json::parse("{}")) override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
     }
 
@@ -234,7 +233,7 @@ public:
                                       json config_json = json::parse("{}")) override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
     }
 
@@ -247,35 +246,35 @@ public:
                                      json config_json = json::parse("{}"))
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
     }
 
     bool SupportsEvaluate() override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->SupportsEvaluate();
     }
 
     bool SupportsGradient() override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->SupportsGradient();
     }
 
     bool SupportsApplyJacobian() override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->SupportsApplyJacobian();
     }
 
     bool SupportsApplyHessian() override
     {
         std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJob(job_lock); // Find an idle job or create a new one.
+        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
         return slurm_job_ptr->client_ptr->SupportsApplyHessian();
     }
 
@@ -283,7 +282,7 @@ private:
     mutable std::mutex slurm_jobs_mutex;
     mutable std::vector<std::unique_ptr<SingleSlurmJob>> slurm_jobs;
     
-    std::unique_ptr<SingleSlurmJob>& getIdleJob(std::unique_lock<std::mutex>& job_lock) const
+    std::unique_ptr<SingleSlurmJob>& getIdleJobOrCreateNewIfNeeded(std::unique_lock<std::mutex>& job_lock) const
     {
         std::unique_lock<std::mutex> guard(slurm_jobs_mutex); // Consider using a r/w-lock
         // Check if there is an idle job using a linear search
