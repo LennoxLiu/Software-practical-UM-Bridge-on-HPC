@@ -5,6 +5,7 @@
 #SBATCH --mem=1gb
 #SBATCH --output=./sub-jobs/%j.out
 
+# start the server named "server"
 server_file="./server"
 
 function get_avaliable_port {
