@@ -1,4 +1,4 @@
-all: clear-server build-server run-server
+all: clear build-load-balancer run-load-balancer
 
 regular-server-obj = test/debug/debug-server.cpp
 slurm-server-obj = host-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
