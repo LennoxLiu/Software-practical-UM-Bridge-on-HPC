@@ -18,7 +18,7 @@ To allow any UM-Bridge client to control models running on an HPC cluster.
     > The file `host-LoadBalancer.cpp` is an example about how to use the class LoadBalancer.
 
     - Compile the LoadBalancer server: `make build-load-balancer`
-    - Load the regular server. Specify the path of your server file in file `regular-server.slurm`, as the variable `server_file`.
+    - Load a regular server. Specify the path of your server file in file `regular-server.slurm`, as the variable `server_file`.
     > You can also specify slurm parameters in the file `regular-server.slurm`.
     - Run the LoadBalancer server: `make run-load-balancer`
 
