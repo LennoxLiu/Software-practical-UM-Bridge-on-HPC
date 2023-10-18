@@ -5,13 +5,20 @@ To allow any UM-Bridge client to control models running on an HPC cluster.
 ## File descriptions
 
 - `LoadBalancer.hpp`
-The main header file that implement the LoadBalancer server as a C++ class `LoadBalancer`. To use this project, you need to include this file in your program.
--  `LoadBalancer.slurm`
-A slurm configuration file, which is used to start a LoadBalancer server in a computing node
+
+  The main header file that implement the LoadBalancer server as a C++ class `LoadBalancer`. To use this project, you need to include this file in your program.
+
+- `LoadBalancer.slurm`
+
+  A slurm configuration file, which is used to start a LoadBalancer server in a computing node
+
 - `regular-server.slurm`
-A slurm configuration file, which is used to start a slurm job running a rugular server in a computing node
+
+  A slurm configuration file, which is used to start a slurm job running a rugular server in a computing node
+
 - `host-LoadBalancer.cpp`
-An example about how to use the class LoadBalancer.
+
+  An example about how to use the class LoadBalancer
 
 ## How to start a LoadBalancer server
 
@@ -44,13 +51,14 @@ An example about how to use the class LoadBalancer.
 
 1. Activate a python environment on the cluster that contains `umbridge` python package
 >e.g. On Helix:
+>
 >1.1 Create a `conda` environment with `umbridge` package.
 >
 >1.2 Load `conda` environment whenever login to a new node.
 >```
-    module load devel/miniconda/3
-    source $MINICONDA_HOME/etc/profile.d/conda.sh
-    conda activate umbridge
+>    module load devel/miniconda/3
+>    source $MINICONDA_HOME/etc/profile.d/conda.sh
+>    conda activate umbridge
 >```
 
 2. Run the client: `python3 client.py <LoadBalancer server hostname>`
@@ -63,10 +71,10 @@ An example about how to use the class LoadBalancer.
 >e.g. On Helix:
 >
 >```
-    ssh <username>@helix.bwservices.uni-heidelberg.de -N -f -L <local port>:<server hostname>:<server port>
-    # start ssh tunnel
-    # -N : do not execute remote command
-    # -f : request ssh to go to the background once the ssh connection has been established
+>    ssh <username>@helix.bwservices.uni-heidelberg.de -N -f -L <local port>:<server hostname>:<server port>
+>    # start ssh tunnel
+>    # -N : do not execute remote command
+>    # -f : request ssh to go to the background once the ssh connection has been established
 >```
 
 2. (**Optional**) Set a port on laptop for the client to use: `export PORT=<local port>`
