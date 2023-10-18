@@ -5,13 +5,20 @@ To allow any UM-Bridge client to control models running on an HPC cluster.
 ## File descriptions
 
 - `LoadBalancer.hpp`
-The main header file that implement the LoadBalancer server as a C++ class `LoadBalancer`. To use this project, you need to include this file in your program.
--  `LoadBalancer.slurm`
-A slurm configuration file, which is used to start a LoadBalancer server in a computing node
+
+  The main header file that implement the LoadBalancer server as a C++ class `LoadBalancer`. To use this project, you need to include this file in your program.
+
+- `LoadBalancer.slurm`
+
+  A slurm configuration file, which is used to start a LoadBalancer server in a computing node
+
 - `regular-server.slurm`
-A slurm configuration file, which is used to start a slurm job running a rugular server in a computing node
+
+  A slurm configuration file, which is used to start a slurm job running a rugular server in a computing node
+
 - `host-LoadBalancer.cpp`
-An example about how to use the class LoadBalancer.
+
+  An example about how to use the class LoadBalancer
 
 ## How to start a LoadBalancer server
 
