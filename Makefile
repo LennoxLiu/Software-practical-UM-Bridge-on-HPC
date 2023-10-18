@@ -1,7 +1,7 @@
-all: clear-server build-server run-server
+all: clear build-load-balancer run-load-balancer
 
-regular-server-obj =  ./minimal-server.cpp
-slurm-server-obj = test-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
+regular-server-obj = test/debug/debug-server.cpp
+slurm-server-obj = host-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
 
 build-load-balancer:
 	- g++ -O3 -Wno-unused-result -std=c++14 $(slurm-server-obj) -o load-balancer -lssl -lcrypto -pthread
@@ -9,11 +9,7 @@ build-load-balancer:
 build-regular-server:
 	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server -lssl -lcrypto -pthread
 
-build-server:
-	- make build-load-balancer
-	- make build-regular-server
-
-run-server: load-balancer
+run-load-balancer: load-balancer
 	- mkdir -p ./urls
 	- mkdir -p ./sub-jobs
 
@@ -22,19 +18,5 @@ run-server: load-balancer
 run-client: client.py
 	- python3 ./client.py
 
-clear-server:
+clear:
 	- rm ./load-balancer
-	- rm ./server
-
-helix-make: helix-build
-	- make run-server
-
-helix-build:
-	- echo `module load compiler/gnu`
-	- make helix-update
-	- make build-server
-
-helix-update:
-	- git config --global credential.helper 'cache --timeout=14400'
-	- git reset --hard
-	- git pull
