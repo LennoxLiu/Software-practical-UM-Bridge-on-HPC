@@ -50,19 +50,19 @@ int main(int argc, char *argv[])
     // List supported models
     std::vector<std::string> model_names = umbridge::SupportedModels(server_url);
 
-    std::vector<std::unique_ptr<LoadBalancer>> LB_vector;
+    std::vector<LoadBalancer> LB_vector;
     for (auto model_name : model_names)
     {
         // Set up and serve model
-        LB_vector.push_back(std::make_unique<LoadBalancer>(model_name));
+        LB_vector.emplace_back(LoadBalancer{model_name});
     }
 
     // End: Instaltialize multiple LB classes for multiple models on the regular server
 
-    // Create a new vector of raw pointers to LB_vector
+    // Create a new vector of pointers to LB_vector
     std::vector<umbridge::Model *> LB_ptr_vector(LB_vector.size());
     std::transform(LB_vector.begin(), LB_vector.end(), LB_ptr_vector.begin(),
-                   [](auto& obj) { return obj.get(); });
+                   [](LoadBalancer& obj) { return &obj; });
 
     std::cout << "Hosting server at: http://" << hostname << ":" << port << std::endl;
     umbridge::serveModels(LB_ptr_vector, hostname, port, false);

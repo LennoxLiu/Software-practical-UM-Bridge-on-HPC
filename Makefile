@@ -1,6 +1,6 @@
 all: clear-server build-server run-server
 
-regular-server-obj = test/debug/debug-server.cpp
+regular-server-obj =  ./minimal-server.cpp
 slurm-server-obj = test-LoadBalancer.cpp LoadBalancer.hpp lib/httplib.h lib/json.hpp lib/umbridge.h
 
 build-load-balancer:
@@ -8,7 +8,6 @@ build-load-balancer:
 
 build-regular-server:
 	- g++ -O3 -w -std=c++11 $(regular-server-obj) -o server -lssl -lcrypto -pthread
-
 
 build-server:
 	- make build-load-balancer
@@ -20,8 +19,8 @@ run-server: load-balancer
 
 	- ./load-balancer
 
-run-client: test/debug/debug-client.py
-	- python3 test/debug/debug-client.py
+run-client: client.py
+	- python3 ./client.py
 
 clear-server:
 	- rm ./load-balancer
