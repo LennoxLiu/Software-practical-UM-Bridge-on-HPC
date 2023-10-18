@@ -1,6 +1,2 @@
 .vscode/
 *.o
-*.out
-*.txt
-load-balancer
-server

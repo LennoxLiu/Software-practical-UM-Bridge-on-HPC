@@ -15,8 +15,8 @@ run-load-balancer: load-balancer
 
 	- ./load-balancer
 
-run-client: test/debug/debug-client.py
-	- python3 test/debug/debug-client.py
+run-client: client.py
+	- python3 ./client.py
 
 clear:
 	- rm ./load-balancer
