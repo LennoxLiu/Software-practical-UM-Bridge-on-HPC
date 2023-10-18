@@ -6,7 +6,7 @@
 #SBATCH --output=./sub-jobs/%j.out
 
 # start the server named "server"
-server_file="./server"
+server_file="./server" # Assume your server files are placed in the project root directory, named "server"
 
 function get_avaliable_port {
     # Define the range of ports to select from
