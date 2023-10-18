@@ -60,3 +60,8 @@ To allow any UM-Bridge client to control models running on an HPC cluster.
 
 3. Run client at localhost: `python3 client.py localhost`
 
+## Example
+
+An example server is in folder `test/MultiplyBy2`. The server `minimal-server.cpp` take the input written in `client.py`, multiply them by 2 and return.
+
+Currently, it will run and test 4 models in parallel, but the LoadBalancer server will process them in sequence.
