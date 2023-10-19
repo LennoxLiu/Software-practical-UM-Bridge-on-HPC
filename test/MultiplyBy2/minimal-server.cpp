@@ -3,9 +3,6 @@
 #include <chrono>
 #include <thread>
 
-// Needed for HTTPS, implies the need for openssl, may be omitted if HTTP suffices
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-
 #include "../../lib/umbridge.h"
 
 class ExampleModel : public umbridge::Model
@@ -97,7 +94,7 @@ int main(int argc, char *argv[])
     ExampleModel model2(15, "backward");
     ExampleModel model3(10, "inward");
     ExampleModel model4(5, "outward");
-    
+
     std::string hostname = "0.0.0.0";
     /*
     if (argc == 2)
