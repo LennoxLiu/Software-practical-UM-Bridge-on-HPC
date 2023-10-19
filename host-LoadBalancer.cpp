@@ -4,9 +4,6 @@
 #include <chrono>
 #include <thread>
 
-// Needed for HTTPS, implies the need for openssl, may be omitted if HTTP suffices
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-
 #include "lib/umbridge.h"
 
 int main(int argc, char *argv[])
