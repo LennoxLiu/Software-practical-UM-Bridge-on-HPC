@@ -25,21 +25,6 @@ int main(int argc, char *argv[])
         port = atoi(port_cstr);
     }
 
-    std::string hostname;
-    if (argc == 2)
-    {
-        hostname = argv[1]; // Receive hostname from command line
-    }
-    else
-    {
-        // Get the hostname of node
-        hostname = getCommandOutput("hostname");
-
-        // Delete line break
-        if (!hostname.empty())
-            hostname.pop_back();
-    }
-
     // Start: Instaltialize multiple LB classes for multiple models on the regular server
 
     // start a SLURM job for single request
@@ -64,6 +49,6 @@ int main(int argc, char *argv[])
     std::transform(LB_vector.begin(), LB_vector.end(), LB_ptr_vector.begin(),
                    [](LoadBalancer& obj) { return &obj; });
 
-    std::cout << "Hosting server at: http://" << hostname << ":" << port << std::endl;
-    umbridge::serveModels(LB_ptr_vector, hostname, port, false);
+    std::cout << "Load balancer running and bound to 0.0.0.0:" << port << std::endl;
+    umbridge::serveModels(LB_ptr_vector, "0.0.0.0", port, false);
 }
