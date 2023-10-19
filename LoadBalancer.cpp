@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     // Start: Instaltialize multiple LB classes for multiple models on the regular server
 
     // start a SLURM job for single request
-    const std::string job_id = submitJob("sbatch regular-server.slurm");
+    const std::string job_id = submitJob("sbatch model.slurm");
     const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
     // May use $SLURM_LOCALID in a .slurm file later
     std::cout << "Hosting sub-server at : " << server_url << std::endl;
