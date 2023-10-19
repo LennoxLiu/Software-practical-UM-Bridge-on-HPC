@@ -1,26 +1,27 @@
 # README
 
-To allow any UM-Bridge client to control models running on an HPC cluster.
+This load balancer allows any UM-Bridge client to control many parallel instances of any numerical model running on an HPC system.
 
 ## File descriptions
 
 - `LoadBalancer.hpp`
 
-  The main header file that implement the LoadBalancer server as a C++ class `LoadBalancer`. To use this project, you need to include this file in your program.
+  The main header file that implements the load balancer as a C++ class `LoadBalancer`.
+
+- `LoadBalancer.cpp`
+
+  Load balancer executable.
 
 - `LoadBalancer.slurm`
 
-  A slurm configuration file, which is used to start a LoadBalancer server in a computing node
+  A slurm configuration file, which is used to start a LoadBalancer on a compute node.
 
-- `regular-server.slurm`
+- `model.slurm`
 
-  A slurm configuration file, which is used to start a slurm job running a rugular server in a computing node
+  A slurm configuration file, which is used to start a slurm job running a model server on a compute node.
 
-- `host-LoadBalancer.cpp`
 
-  An example about how to use the class LoadBalancer
-
-## How to start a LoadBalancer server
+## How to start the load balancer
 
 >The LoadBalancer server is supposed to run at login node, but it can also run at computing node.
 
@@ -31,14 +32,12 @@ To allow any UM-Bridge client to control models running on an HPC cluster.
 > Sometimes the default port 4242 of the login node is occupied.
 
 3. Compile and run the server
-    > `LoadBalancer.hpp` is the file you need to include to use the LoadBalancer. Note that this file will include `umbridge.hpp`.
 
-    - Compile the LoadBalancer server: `make build-load-balancer`
-    > Modify the variable `slurm-server-obj` in the file `Makefile` if you want to use the class LoadBalancer in your own way.
+    - Compile the load balancer: `make`
 
-    - Load a regular server. Specify the path of your server file in file `regular-server.slurm`, as the variable `server_file`.
+    - Prepare a model server. Specify the path of your model server file in `model.slurm`, as the variable `server_file`.
     > You can also specify slurm parameters in the file `regular-server.slurm`.
-    - Run the LoadBalancer server: `make run-load-balancer`
+    - Run the load balancer: `./load-balancer`
 
     > You can specify slurm parameters in the file `LoadBalancer.slurm`
     > The the LoadBalancer server will occupy a terminal, so you need to start a new one if you want to run a client on the same node.

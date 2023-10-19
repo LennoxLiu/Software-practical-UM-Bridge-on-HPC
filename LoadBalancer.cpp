@@ -3,11 +3,30 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <filesystem>
+
+#include <unistd.h>
+#include <limits.h>
 
 #include "lib/umbridge.h"
 
+void create_directory_if_not_existing(std::string directory) {
+    if (!std::filesystem::is_directory(directory) || !std::filesystem::exists(directory)) {
+        std::filesystem::create_directory(directory);
+    }
+}
+
+std::string get_hostname() {
+    char hostname[HOST_NAME_MAX];
+    gethostname(hostname, HOST_NAME_MAX);
+    return std::string(hostname);
+}
+
 int main(int argc, char *argv[])
 {
+
+    create_directory_if_not_existing("urls");
+    create_directory_if_not_existing("sub-jobs");
 
     // Read environment variables for configuration
     char const *port_cstr = std::getenv("PORT");
@@ -46,6 +65,7 @@ int main(int argc, char *argv[])
     std::transform(LB_vector.begin(), LB_vector.end(), LB_ptr_vector.begin(),
                    [](LoadBalancer& obj) { return &obj; });
 
-    std::cout << "Load balancer running and bound to 0.0.0.0:" << port << std::endl;
+    std::cout << "Load balancer running on host " << get_hostname()
+              << " and bound to 0.0.0.0:" << port << std::endl;
     umbridge::serveModels(LB_ptr_vector, "0.0.0.0", port, false);
 }
