@@ -180,39 +180,126 @@ private:
     std::string job_id;
 };
 
+// state = ["WAITING", "RUNNING", "FINISHED", "CANCELED"]
+bool waitForHQJobState(const std::string &job_id, const std::string &state = "COMPLETED")
+{
+    const std::string command = "hq job info " + job_id + " | grep State | awk '{print $4}'";
+    // std::cout << "Checking runtime: " << command << std::endl;
+    std::string job_status;
+
+    do
+    {
+        job_status = getCommandOutput(command);
+
+        // Delete the line break
+        if (!job_status.empty())
+            job_status.pop_back();
+
+        // Don't wait if there is an error or the job is ended
+        if (job_status == "" || (state != "FINISHED" && job_status == "FINISHED") || job_status == "FAILED" || job_status == "CANCELED")
+        {
+            std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
+            return false;
+        }
+        // std::cout<<"Job status: "<<job_status<<std::endl;
+        sleep(1);
+    } while (job_status != state);
+
+    return true;
+}
+
+std::string submitHQJob()
+{
+    std::string hq_command = "hq submit --output-mode=quiet hq_scripts/job.sh";
+
+    std::string job_id;
+    int i = 0;
+    do
+    {
+        job_id = getCommandOutput(hq_command);
+
+        // Delete the line break
+        if (!job_id.empty())
+            job_id.pop_back();
+
+        ++i;
+    } while (waitForHQJobState(job_id, "RUNNING") == false && i < 3 && waitForFile("./urls/hqjob-" + job_id + ".txt", 10) == false);
+    // Wait for the HQ Job to start
+    // Also wait until job is running and url file is written
+    // Try maximum 3 times
+
+    // Check if the job is running
+    if (waitForHQJobState(job_id, "RUNNING") == false || waitForFile("./urls/hqjob-" + job_id + ".txt", 10) == false)
+    {
+        std::cout << "Submit job failure." << std::endl;
+        exit(-1);
+    }
+
+    return job_id;
+}
+
+class HyperQueueJob
+{
+public:
+    HyperQueueJob(std::string model_name = "forward")
+    {
+        job_id = submitHQJob();
+
+        // Get the slurm job id
+        const std::string slurm_id = readUrl("./urls/hqjob-" + job_id + ".txt");
+
+        // Get the server URL
+        const std::string server_url = readUrl("./urls/url-" + slurm_id + ".txt");
+
+        // Start a client, using unique pointer
+        client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, model_name); // always uses the model "forward"
+    }
+
+    ~HyperQueueJob()
+    {
+        // Cancel the SLURM job
+        std::system(("hq job cancel " + job_id).c_str());
+
+        // Delete the url text file
+        std::system(("rm ./urls/hqjob-" + job_id + ".txt").c_str());
+    }
+
+    std::unique_ptr<umbridge::HTTPModel> client_ptr;
+
+private:
+    std::string job_id;
+};
+
+
 class LoadBalancer : public umbridge::Model
 {
 public:
-    LoadBalancer(std::string name = "forward") : umbridge::Model(name)  
+    LoadBalancer(std::string name = "forward") : umbridge::Model(name)
     {
-        // Could optionally start a fixed number of jobs here.
+        // Setup HyperQueue server
+        std::system("hq server start &");
+        sleep(1); // Workaround: give the HQ server enough time to start.
+
+        // Create allocation queue
+        std::system("hq_scripts/allocation_queue.sh");
     }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
-        // get size from the dummy server, can only make sense after starting a server
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->GetInputSizes(config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->GetInputSizes(config_json);
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json = json::parse("{}")) const override
     {
-        // get size from the dummy server, can only make sense after starting a server
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->GetOutputSizes(config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->GetOutputSizes(config_json);
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config_json = json::parse("{}")) override
     {
-        std::cout << "Request received in Load Balancer." << std::endl;
-
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-
-        // Pass the arguments and get the output
-        return slurm_job_ptr->client_ptr->Evaluate(inputs, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->Evaluate(inputs, config_json);
     }
 
     std::vector<double> Gradient(unsigned int outWrt,
@@ -221,9 +308,8 @@ public:
                                  const std::vector<double> &sens,
                                  json config_json = json::parse("{}")) override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
     }
 
     std::vector<double> ApplyJacobian(unsigned int outWrt,
@@ -232,9 +318,8 @@ public:
                                       const std::vector<double> &vec,
                                       json config_json = json::parse("{}")) override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
     }
 
     std::vector<double> ApplyHessian(unsigned int outWrt,
@@ -245,69 +330,31 @@ public:
                                      const std::vector<double> &vec,
                                      json config_json = json::parse("{}"))
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
     }
 
     bool SupportsEvaluate() override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->SupportsEvaluate();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsEvaluate();
     }
 
     bool SupportsGradient() override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->SupportsGradient();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsGradient();
     }
 
     bool SupportsApplyJacobian() override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->SupportsApplyJacobian();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsApplyJacobian();
     }
 
     bool SupportsApplyHessian() override
     {
-        std::unique_lock<std::mutex> job_lock;
-        auto& slurm_job_ptr = getIdleJobOrCreateNewIfNeeded(job_lock);
-        return slurm_job_ptr->client_ptr->SupportsApplyHessian();
-    }
-
-private:
-    mutable std::mutex slurm_jobs_mutex;
-    mutable std::vector<std::unique_ptr<SingleSlurmJob>> slurm_jobs;
-    
-    std::unique_ptr<SingleSlurmJob>& getIdleJobOrCreateNewIfNeeded(std::unique_lock<std::mutex>& job_lock) const
-    {
-        std::unique_lock<std::mutex> guard(slurm_jobs_mutex); // Consider using a r/w-lock
-        // Check if there is an idle job using a linear search
-        // this can be improved if necessary for performance.
-        for (auto& job : slurm_jobs) 
-        {
-            std::unique_lock<std::mutex> busy_lock(job->busy_mutex, std::try_to_lock);
-            if (busy_lock) 
-            {
-                busy_lock.swap(job_lock);
-                return job;
-            }
-        }
-
-        // Create a new job if no idle jobs available
-        guard.unlock();
-        auto new_job = std::make_unique<SingleSlurmJob>(Model::name);
-        std::unique_lock<std::mutex> busy_lock(new_job->busy_mutex);
-        busy_lock.swap(job_lock);
-    
-        // Add new job to the list of jobs
-        // Might be able to make this async?
-        guard.lock();
-        slurm_jobs.push_back(std::move(new_job));
-
-        return slurm_jobs.back();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsApplyHessian();
     }
 };
