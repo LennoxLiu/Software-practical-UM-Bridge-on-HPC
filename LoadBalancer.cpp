@@ -3,14 +3,30 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <filesystem>
 
-// Needed for HTTPS, implies the need for openssl, may be omitted if HTTP suffices
-#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include <unistd.h>
+#include <limits.h>
 
 #include "lib/umbridge.h"
 
+void create_directory_if_not_existing(std::string directory) {
+    if (!std::filesystem::is_directory(directory) || !std::filesystem::exists(directory)) {
+        std::filesystem::create_directory(directory);
+    }
+}
+
+std::string get_hostname() {
+    char hostname[HOST_NAME_MAX];
+    gethostname(hostname, HOST_NAME_MAX);
+    return std::string(hostname);
+}
+
 int main(int argc, char *argv[])
 {
+
+    create_directory_if_not_existing("urls");
+    create_directory_if_not_existing("sub-jobs");
 
     // Read environment variables for configuration
     char const *port_cstr = std::getenv("PORT");
@@ -25,25 +41,10 @@ int main(int argc, char *argv[])
         port = atoi(port_cstr);
     }
 
-    std::string hostname;
-    if (argc == 2)
-    {
-        hostname = argv[1]; // Receive hostname from command line
-    }
-    else
-    {
-        // Get the hostname of node
-        hostname = getCommandOutput("hostname");
-
-        // Delete line break
-        if (!hostname.empty())
-            hostname.pop_back();
-    }
-
     // Start: Instaltialize multiple LB classes for multiple models on the regular server
 
     // start a SLURM job for single request
-    const std::string job_id = submitJob("sbatch regular-server.slurm");
+    const std::string job_id = submitJob("sbatch model.slurm");
     const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
     // May use $SLURM_LOCALID in a .slurm file later
     std::cout << "Hosting sub-server at : " << server_url << std::endl;
@@ -64,6 +65,7 @@ int main(int argc, char *argv[])
     std::transform(LB_vector.begin(), LB_vector.end(), LB_ptr_vector.begin(),
                    [](LoadBalancer& obj) { return &obj; });
 
-    std::cout << "Hosting server at: http://" << hostname << ":" << port << std::endl;
-    umbridge::serveModels(LB_ptr_vector, hostname, port, false);
+    std::cout << "Load balancer running on host " << get_hostname()
+              << " and bound to 0.0.0.0:" << port << std::endl;
+    umbridge::serveModels(LB_ptr_vector, "0.0.0.0", port, false);
 }

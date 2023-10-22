@@ -4,6 +4,4 @@
 #SBATCH --time=00:30:00
 #SBATCH --mem=1gb
 
-make build-load-balancer
-make run-load-balancer
-
+./load-balancer
