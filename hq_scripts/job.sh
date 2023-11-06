@@ -10,4 +10,4 @@
 # and to ensure that HQ won't schedule any more jobs to this allocation
 
 echo "$SLURM_JOB_ID" > urls/hqjob-$HQ_JOB_ID.txt # send the slurm job id to load-balancer
-sleep 1h # keep the job occupied
+sleep infinity # keep the job occupied
