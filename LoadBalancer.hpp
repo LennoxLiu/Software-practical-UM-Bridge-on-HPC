@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <tuple>
 #include <memory>
-#include <mutex>
 #include "lib/umbridge.h"
 
 // run and get the result of command
@@ -141,7 +140,7 @@ public:
     SingleSlurmJob(std::string model_name = "forward")
     {
         // start a SLURM job for single request
-        job_id = submitJob("sbatch regular-server.slurm");
+        job_id = submitJob("sbatch model.slurm");
 
         const std::string server_url = readUrl("./urls/url-" + job_id + ".txt"); // read server url from txt file
         // May use $SLURM_LOCALID in a .slurm file later
@@ -163,18 +162,14 @@ public:
 
     ~SingleSlurmJob()
     {
-        std::cout << "Cancelling job..." << std::endl;
         // Cancel the SLURM job
         std::system(("scancel " + job_id).c_str());
 
-        std::cout << "Deleting URL file..." << std::endl;
         // Delete the url text file
         std::system(("rm ./urls/url-" + job_id + ".txt").c_str());
     }
 
     std::unique_ptr<umbridge::HTTPModel> client_ptr;
-
-    mutable std::mutex busy_mutex;
 
 private:
     std::string job_id;
@@ -339,19 +334,16 @@ public:
         HyperQueueJob hq_job;
         return hq_job.client_ptr->SupportsEvaluate();
     }
-
     bool SupportsGradient() override
     {
         HyperQueueJob hq_job;
         return hq_job.client_ptr->SupportsGradient();
     }
-
     bool SupportsApplyJacobian() override
     {
         HyperQueueJob hq_job;
         return hq_job.client_ptr->SupportsApplyJacobian();
     }
-
     bool SupportsApplyHessian() override
     {
         HyperQueueJob hq_job;

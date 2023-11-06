@@ -1,12 +1,7 @@
 #include <iostream>
 #include <string>
 #include <chrono>
-#include <ctime>
 #include <thread>
-#include <random>
-
-// Needed for HTTPS, implies the need for openssl, may be omitted if HTTP suffices
-#define CPPHTTPLIB_OPENSSL_SUPPORT
 
 #include "../../lib/umbridge.h"
 
@@ -15,8 +10,7 @@ class ExampleModel : public umbridge::Model
 public:
     ExampleModel(int test_delay, std::string name = "forward")
         : umbridge::Model(name),
-          test_delay(test_delay),
-          id(generateID())
+          test_delay(test_delay)
     {
     }
 
@@ -28,23 +22,16 @@ public:
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json) const override
     {
-        return {5};
+        return {1};
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config) override
     {
-        auto start = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        //std::cout << "Model (" << id << ") received request at " << std::ctime(&start) << std::endl;
-        
-        // Use an artificial delay to simulate actual work being done
+        // Do the actual model evaluation; here we just multiply the first entry of the first input vector by two, and store the result in the output.
+        // In addition, we support an artificial delay here, simulating actual work being done.
         std::this_thread::sleep_for(std::chrono::milliseconds(test_delay));
 
-        auto end = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        auto duration = std::difftime(end, start);
-        //std::cout << "Model (" << id << ") finished request at " << std::ctime(&end) << "(" << std::difftime(end, start) << "s)" << std::endl;
-        // Input is the time at which the request was sent from client
-        std::vector<std::vector<double>> result {{(double) id, inputs[0][0], (double) start, (double) end, duration}};
-        return result;
+        return {{inputs[0][0] * 2.0}};
     }
 
     // Specify that our model supports evaluation. Jacobian support etc. may be indicated similarly.
@@ -55,14 +42,6 @@ public:
 
 private:
     int test_delay;
-    int id;
-
-    int generateID() {
-        std::random_device dev;
-        std::mt19937 rng(dev());
-        std::uniform_int_distribution<int> dist(0, 1000000);
-        return dist(rng);
-    }
 };
 
 // run and get the result of command
@@ -112,10 +91,10 @@ int main(int argc, char *argv[])
 
     // Set up and serve model
     ExampleModel model(test_delay);
-    ExampleModel model2(5000, "backward");
+    ExampleModel model2(15, "backward");
     ExampleModel model3(10, "inward");
     ExampleModel model4(5, "outward");
-    
+
     std::string hostname = "0.0.0.0";
     /*
     if (argc == 2)
