@@ -175,38 +175,126 @@ private:
     std::string job_id;
 };
 
+// state = ["WAITING", "RUNNING", "FINISHED", "CANCELED"]
+bool waitForHQJobState(const std::string &job_id, const std::string &state = "COMPLETED")
+{
+    const std::string command = "hq job info " + job_id + " | grep State | awk '{print $4}'";
+    // std::cout << "Checking runtime: " << command << std::endl;
+    std::string job_status;
+
+    do
+    {
+        job_status = getCommandOutput(command);
+
+        // Delete the line break
+        if (!job_status.empty())
+            job_status.pop_back();
+
+        // Don't wait if there is an error or the job is ended
+        if (job_status == "" || (state != "FINISHED" && job_status == "FINISHED") || job_status == "FAILED" || job_status == "CANCELED")
+        {
+            std::cerr << "Wait for job status failure, status : " << job_status << std::endl;
+            return false;
+        }
+        // std::cout<<"Job status: "<<job_status<<std::endl;
+        sleep(1);
+    } while (job_status != state);
+
+    return true;
+}
+
+std::string submitHQJob()
+{
+    std::string hq_command = "hq submit --output-mode=quiet hq_scripts/job.sh";
+
+    std::string job_id;
+    int i = 0;
+    do
+    {
+        job_id = getCommandOutput(hq_command);
+
+        // Delete the line break
+        if (!job_id.empty())
+            job_id.pop_back();
+
+        ++i;
+    } while (waitForHQJobState(job_id, "RUNNING") == false && i < 3 && waitForFile("./urls/hqjob-" + job_id + ".txt", 10) == false);
+    // Wait for the HQ Job to start
+    // Also wait until job is running and url file is written
+    // Try maximum 3 times
+
+    // Check if the job is running
+    if (waitForHQJobState(job_id, "RUNNING") == false || waitForFile("./urls/hqjob-" + job_id + ".txt", 10) == false)
+    {
+        std::cout << "Submit job failure." << std::endl;
+        exit(-1);
+    }
+
+    return job_id;
+}
+
+class HyperQueueJob
+{
+public:
+    HyperQueueJob(std::string model_name = "forward")
+    {
+        job_id = submitHQJob();
+
+        // Get the slurm job id
+        const std::string slurm_id = readUrl("./urls/hqjob-" + job_id + ".txt");
+
+        // Get the server URL
+        const std::string server_url = readUrl("./urls/url-" + slurm_id + ".txt");
+
+        // Start a client, using unique pointer
+        client_ptr = std::make_unique<umbridge::HTTPModel>(server_url, model_name); // always uses the model "forward"
+    }
+
+    ~HyperQueueJob()
+    {
+        // Cancel the SLURM job
+        std::system(("hq job cancel " + job_id).c_str());
+
+        // Delete the url text file
+        std::system(("rm ./urls/hqjob-" + job_id + ".txt").c_str());
+    }
+
+    std::unique_ptr<umbridge::HTTPModel> client_ptr;
+
+private:
+    std::string job_id;
+};
+
+
 class LoadBalancer : public umbridge::Model
 {
 public:
     LoadBalancer(std::string name = "forward") : umbridge::Model(name)
     {
-        // May start a "SingleSlurmJob slurm_job;" here,
-        // and keep slurm_job as private member.
+        // Setup HyperQueue server
+        std::system("hq server start &");
+        sleep(1); // Workaround: give the HQ server enough time to start.
+
+        // Create allocation queue
+        std::system("hq_scripts/allocation_queue.sh");
     }
 
     std::vector<std::size_t> GetInputSizes(const json &config_json = json::parse("{}")) const override
     {
-        // get size from the dummy server, can only make sense after starting a server
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->GetInputSizes(config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->GetInputSizes(config_json);
     }
 
     std::vector<std::size_t> GetOutputSizes(const json &config_json = json::parse("{}")) const override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->GetOutputSizes(config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->GetOutputSizes(config_json);
     }
 
     std::vector<std::vector<double>> Evaluate(const std::vector<std::vector<double>> &inputs, json config_json = json::parse("{}")) override
     {
-        std::cout << "Request received in Load Balancer." << std::endl;
-
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job
-
-        // Pass the arguments and get the output
-        std::vector<std::vector<double>> outputs = slurm_job.client_ptr->Evaluate(inputs, config_json);
-
-        return outputs; // return output as vector
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->Evaluate(inputs, config_json);
     }
 
     std::vector<double> Gradient(unsigned int outWrt,
@@ -215,8 +303,8 @@ public:
                                  const std::vector<double> &sens,
                                  json config_json = json::parse("{}")) override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->Gradient(outWrt, inWrt, inputs, sens, config_json);
     }
 
     std::vector<double> ApplyJacobian(unsigned int outWrt,
@@ -225,8 +313,8 @@ public:
                                       const std::vector<double> &vec,
                                       json config_json = json::parse("{}")) override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->ApplyJacobian(outWrt, inWrt, inputs, vec, config_json);
     }
 
     std::vector<double> ApplyHessian(unsigned int outWrt,
@@ -237,30 +325,28 @@ public:
                                      const std::vector<double> &vec,
                                      json config_json = json::parse("{}"))
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->ApplyHessian(outWrt, inWrt1, inWrt2, inputs, sens, vec, config_json);
     }
 
     bool SupportsEvaluate() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsEvaluate();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsEvaluate();
     }
     bool SupportsGradient() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsGradient();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsGradient();
     }
     bool SupportsApplyJacobian() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsApplyJacobian();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsApplyJacobian();
     }
     bool SupportsApplyHessian() override
     {
-        SingleSlurmJob slurm_job(Model::name); // start a new SLURM job;
-        return slurm_job.client_ptr->SupportsApplyHessian();
+        HyperQueueJob hq_job;
+        return hq_job.client_ptr->SupportsApplyHessian();
     }
-
-private:
 };
